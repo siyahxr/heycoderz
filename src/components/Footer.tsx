@@ -39,39 +39,39 @@ export const Footer: React.FC = () => {
             </Link>
 
             <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
-              Geliştiricilerin üretkenliğini artıran araçlar, kaynaklar ve modern geliştirici ekosistemi platformu.
+              {t("footer.desc")}
             </p>
           </div>
 
           {/* Nav Links Col 1: Navigasyon */}
           <div className="lg:col-span-2 md:col-span-2 space-y-3">
             <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider font-mono">
-              Navigasyon
+              {t("footer.navigation")}
             </h4>
             <ul className="space-y-2 text-sm text-gray-400">
               <li>
                 <Link href="/" className="hover:text-purple-300 transition-colors">
-                  Anasayfa
+                  {t("nav.home") || "Anasayfa"}
                 </Link>
               </li>
               <li>
                 <Link href="/araclar" className="hover:text-purple-300 transition-colors">
-                  Araçlar
+                  {t("nav.tools")}
                 </Link>
               </li>
               <li>
                 <Link href="/playground" className="hover:text-purple-300 transition-colors">
-                  Playground
+                  {t("nav.playground")}
                 </Link>
               </li>
               <li>
                 <Link href="/kaynaklar" className="hover:text-purple-300 transition-colors">
-                  Kaynaklar
+                  {t("nav.resources")}
                 </Link>
               </li>
               <li>
                 <Link href="/blog" className="hover:text-purple-300 transition-colors">
-                  Blog
+                  {t("nav.blog")}
                 </Link>
               </li>
             </ul>
@@ -85,22 +85,22 @@ export const Footer: React.FC = () => {
             <ul className="space-y-2 text-sm text-gray-400">
               <li>
                 <Link href="/hakkimizda" className="hover:text-purple-300 transition-colors">
-                  Hakkımızda
+                  {t("nav.about")}
                 </Link>
               </li>
               <li>
                 <Link href="/topluluk" className="hover:text-purple-300 transition-colors">
-                  Topluluk
+                  {t("nav.community")}
                 </Link>
               </li>
               <li>
                 <Link href="/giris" className="hover:text-purple-300 transition-colors">
-                  Giriş Yap
+                  {t("nav.login")}
                 </Link>
               </li>
               <li>
                 <Link href="/dashboard" className="hover:text-purple-300 transition-colors">
-                  Geliştirici Paneli
+                  {t("nav.dashboard")}
                 </Link>
               </li>
             </ul>
@@ -109,22 +109,22 @@ export const Footer: React.FC = () => {
           {/* Nav Links Col 3: Yasal */}
           <div className="lg:col-span-2 md:col-span-2 space-y-3">
             <h4 className="text-xs font-semibold text-gray-300 uppercase tracking-wider font-mono">
-              Yasal & Güvenlik
+              {t("footer.legal")}
             </h4>
             <ul className="space-y-2 text-sm text-gray-400">
               <li>
                 <Link href="/terms" className="hover:text-purple-300 transition-colors">
-                  Kullanım Koşulları
+                  {t("footer.terms")}
                 </Link>
               </li>
               <li>
                 <Link href="/privacy" className="hover:text-purple-300 transition-colors">
-                  Gizlilik Politikası
+                  {t("footer.privacy")}
                 </Link>
               </li>
               <li>
                 <Link href="/cookies" className="hover:text-purple-300 transition-colors">
-                  Çerez Politikası
+                  {t("footer.cookies")}
                 </Link>
               </li>
             </ul>
@@ -184,18 +184,18 @@ export const Footer: React.FC = () => {
 
         {/* Bottom copyright row */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-          <p>© {new Date().getFullYear()} heycoderz. Tüm hakları saklıdır.</p>
+          <p>© {new Date().getFullYear()} heycoderz. {t("footer.copyright")}</p>
           <div className="flex items-center gap-4 text-xs text-gray-500">
             <Link href="/terms" className="hover:text-purple-300 transition-colors">
-              Kullanım Koşulları
+              {t("footer.terms")}
             </Link>
             <span>•</span>
             <Link href="/privacy" className="hover:text-purple-300 transition-colors">
-              Gizlilik Politikası
+              {t("footer.privacy")}
             </Link>
             <span>•</span>
             <Link href="/cookies" className="hover:text-purple-300 transition-colors">
-              Çerezler
+              {t("footer.cookies")}
             </Link>
           </div>
         </div>
