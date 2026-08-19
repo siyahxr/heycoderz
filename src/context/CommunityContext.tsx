@@ -72,33 +72,8 @@ export function formatTimeAgo(dateInput: number | string | undefined): string {
   return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
 }
 
-// Clean, realistic initial welcome post by the creator/admin
-const INITIAL_POSTS: CommunityPost[] = [
-  {
-    id: "post-welcome",
-    authorId: "admin-master",
-    authorName: "Efe Taşkın",
-    authorUsername: "efe",
-    authorAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=1787085332805",
-    authorBadge: "Kurucu & Baş Geliştirici",
-    authorRole: "admin",
-    title: "Hey Coder'z Platformu Yayında! 🚀",
-    body: "Buralarda büyük ihtimalle yenisin. Umarım burası senin için hem eğlenceli hem de öğretici bir yer olur. Tekrar hoş geldin!",
-    codeSnippet: `// heycoderz geliştirici manifestosu
-const platform = {
-  name: "heycoderz",
-  mission: "Geliştiricileri güçlendirmek",
-  openTools: true,
-  communityFirst: true
-};`,
-    tag: "Genel",
-    likes: 1,
-    likedByUserIds: ["admin-master"],
-    comments: [],
-    createdAt: Date.now() - 3600000 * 4,
-    timestamp: Date.now() - 3600000 * 4,
-  },
-];
+// Initial posts list
+const INITIAL_POSTS: CommunityPost[] = [];
 
 interface CommunityContextType {
   posts: CommunityPost[];

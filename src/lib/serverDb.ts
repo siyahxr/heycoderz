@@ -24,7 +24,7 @@ export interface DatabaseSchema {
 const DATA_DIR = path.join(process.cwd(), ".data");
 const DB_FILE = path.join(DATA_DIR, "database.json");
 
-// Default initial state
+// Default initial state (Clean, no phantom demo posts)
 const INITIAL_DATABASE: DatabaseSchema = {
   users: [
     {
@@ -40,32 +40,7 @@ const INITIAL_DATABASE: DatabaseSchema = {
     efe: "efe2008efeAxA!!3131",
     oyku: "oyku2026heycoderz!",
   },
-  posts: [
-    {
-      id: "post-welcome",
-      authorId: "admin-master",
-      authorName: "Efe Taşkın",
-      authorUsername: "efe",
-      authorAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=1787085332805",
-      authorBadge: "Kurucu & Baş Geliştirici",
-      authorRole: "admin",
-      title: "Hey Coder'z Platformu Yayında! 🚀",
-      body: "heycoderz platformuna hoş geldiniz! Burada yeni nesil araçları keşfedebilir, kod playground alanında denemeler yapabilir ve geliştirici topluluğuyla etkileşime geçebilirsiniz.",
-      codeSnippet: `// heycoderz geliştirici manifestosu
-const platform = {
-  name: "heycoderz",
-  mission: "Geliştiricileri güçlendirmek",
-  openTools: true,
-  communityFirst: true
-};`,
-      tag: "Genel",
-      likes: 1,
-      likedByUserIds: ["admin-master"],
-      comments: [],
-      createdAt: Date.now() - 3600000 * 2,
-      timestamp: Date.now() - 3600000 * 2,
-    },
-  ],
+  posts: [],
   articles: [],
   jobs: [],
   lastUpdated: Date.now(),
@@ -87,9 +62,12 @@ function ensureDataDir(): boolean {
 
 // Check Cloud KV / Upstash credentials
 function getCloudCredentials() {
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
-  return url && token ? { url, token } : null;
+  const rawUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const rawToken = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  if (!rawUrl || !rawToken) return null;
+  const url = rawUrl.replace(/^["']|["']$/g, "").trim();
+  const token = rawToken.replace(/^["']|["']$/g, "").trim();
+  return { url, token };
 }
 
 export async function fetchCloudDatabase(): Promise<DatabaseSchema> {
@@ -99,11 +77,18 @@ export async function fetchCloudDatabase(): Promise<DatabaseSchema> {
   }
 
   try {
-    const res = await fetch(`${creds.url}/get/heycoderz_database_v2`, {
-      headers: { Authorization: `Bearer ${creds.token}` },
+    // 1. Try standard Upstash REST command
+    const res = await fetch(creds.url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${creds.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(["GET", "heycoderz_database_v2"]),
       cache: "no-store",
     });
     const data = await res.json();
+
     if (data?.result) {
       const parsed = typeof data.result === "string" ? JSON.parse(data.result) : data.result;
       inMemoryDb = {
@@ -111,7 +96,9 @@ export async function fetchCloudDatabase(): Promise<DatabaseSchema> {
         ...parsed,
         users: parsed.users && parsed.users.length > 0 ? parsed.users : INITIAL_DATABASE.users,
         adminPasswords: parsed.adminPasswords || INITIAL_DATABASE.adminPasswords,
-        posts: parsed.posts || INITIAL_DATABASE.posts,
+        posts: Array.isArray(parsed.posts) ? parsed.posts : [],
+        articles: Array.isArray(parsed.articles) ? parsed.articles : [],
+        jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
       };
       return inMemoryDb;
     }
@@ -132,7 +119,7 @@ export function getDatabase(): DatabaseSchema {
         ...parsed,
         users: parsed.users && parsed.users.length > 0 ? parsed.users : INITIAL_DATABASE.users,
         adminPasswords: parsed.adminPasswords || INITIAL_DATABASE.adminPasswords,
-        posts: parsed.posts || INITIAL_DATABASE.posts,
+        posts: Array.isArray(parsed.posts) ? parsed.posts : [],
       };
       return inMemoryDb;
     }
@@ -151,17 +138,17 @@ export async function saveCloudDatabase(data: Partial<DatabaseSchema>): Promise<
   };
   inMemoryDb = updated;
 
-  // 1. Try persisting to Cloud Database (Upstash / KV)
+  // 1. Persist to Cloud Database (Upstash Redis)
   const creds = getCloudCredentials();
   if (creds) {
     try {
-      await fetch(`${creds.url}/set/heycoderz_database_v2`, {
+      await fetch(creds.url, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${creds.token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(updated),
+        body: JSON.stringify(["SET", "heycoderz_database_v2", JSON.stringify(updated)]),
       });
     } catch (e) {
       console.warn("Could not persist to Upstash Cloud DB:", e);
@@ -190,13 +177,13 @@ export function saveDatabase(data: Partial<DatabaseSchema>): DatabaseSchema {
   // Background cloud save if credentials exist
   const creds = getCloudCredentials();
   if (creds) {
-    fetch(`${creds.url}/set/heycoderz_database_v2`, {
+    fetch(creds.url, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${creds.token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(updated),
+      body: JSON.stringify(["SET", "heycoderz_database_v2", JSON.stringify(updated)]),
     }).catch(() => {});
   }
 
