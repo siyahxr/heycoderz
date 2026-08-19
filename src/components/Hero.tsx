@@ -3,9 +3,12 @@
 import React from "react";
 import Link from "next/link";
 import { ArrowRight, ChevronRight, Sparkles } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 import { CodeEditor } from "./CodeEditor";
 
 export const Hero: React.FC = () => {
+  const { t } = useLanguage();
+
   return (
     <section className="relative pt-12 pb-20 sm:pt-16 sm:pb-28 lg:pt-20 lg:pb-32 overflow-hidden">
       {/* Background ambient lighting effects */}
@@ -25,25 +28,24 @@ export const Hero: React.FC = () => {
             >
               <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse shadow-[0_0_8px_#a855f7]" />
               <span className="text-xs sm:text-sm font-medium tracking-wide text-purple-200">
-                Kodla. Öğren. Geliş.
+                {t("hero.badge")}
               </span>
               <Sparkles className="w-3.5 h-3.5 text-purple-300" />
             </Link>
 
             {/* Main Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-[56px] xl:text-[62px] font-extrabold tracking-tight text-white leading-[1.12]">
-              Geliştiriciler için{" "}
+              {t("hero.titlePrefix")}{" "}
               <br className="hidden sm:inline" />
-              her şey{" "}
+              {t("hero.titleBreak")}{" "}
               <span className="bg-gradient-to-r from-purple-400 via-purple-500 to-indigo-400 bg-clip-text text-transparent">
-                burada.
+                {t("hero.titleHighlight")}
               </span>
             </h1>
 
             {/* Subtitle Paragraph */}
             <p className="text-base sm:text-lg text-gray-400 leading-relaxed max-w-xl font-normal">
-              Hey! Coder&apos;z, geliştiricilerin üretkenliğini artıran araçlar, kaynaklar
-              ve topluluk desteği sunar. Birlikte öğren, birlikte geliştir.
+              {t("hero.subtitle")}
             </p>
 
             {/* CTA Buttons */}
@@ -52,7 +54,7 @@ export const Hero: React.FC = () => {
                 href="/araclar"
                 className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl font-medium text-white bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-[0_0_25px_rgba(139,92,246,0.4)] hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] transition-all duration-200 group text-center cursor-pointer active:scale-98"
               >
-                <span>Hemen Keşfet</span>
+                <span>{t("hero.exploreBtn")}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
 
@@ -60,7 +62,7 @@ export const Hero: React.FC = () => {
                 href="/kaynaklar"
                 className="inline-flex items-center justify-center gap-1.5 px-7 py-3.5 rounded-xl font-medium text-gray-200 hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border border-white/15 hover:border-purple-500/40 backdrop-blur-sm transition-all duration-200 group text-center cursor-pointer active:scale-98"
               >
-                <span>Kaynaklara Göz At</span>
+                <span>{t("hero.resourcesBtn")}</span>
                 <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-400 group-hover:translate-x-0.5 transition-all" />
               </Link>
             </div>

@@ -35,7 +35,45 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" className={`${jakarta.variable} ${jetbrainsMono.variable} scroll-smooth`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              function googleTranslateElementInit() {
+                try {
+                  if (window.google && window.google.translate) {
+                    new window.google.translate.TranslateElement({
+                      pageLanguage: 'tr',
+                      includedLanguages: 'tr,en,de,es,fr,it,ru,ar,zh-CN,ja,ko,pt,az,nl',
+                      autoDisplay: false,
+                      layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE
+                    }, 'google_translate_element');
+                  }
+                } catch(e) {}
+              }
+            `,
+          }}
+        />
+        <script
+          src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+          async
+          defer
+        />
+      </head>
       <body className="bg-[#030303] text-gray-100 min-h-screen flex flex-col font-sans selection:bg-purple-500/30 selection:text-white antialiased">
+        <div
+          id="google_translate_element"
+          style={{
+            position: "absolute",
+            left: "-9999px",
+            top: "-9999px",
+            width: "1px",
+            height: "1px",
+            overflow: "hidden",
+            opacity: 0,
+            pointerEvents: "none",
+          }}
+        />
         <LanguageProvider>
           <AuthProvider>
             <CommunityProvider>

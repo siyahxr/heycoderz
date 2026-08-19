@@ -1,4 +1,7 @@
+"use client";
+
 import React from "react";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface TechLogo {
   name: string;
@@ -7,6 +10,8 @@ interface TechLogo {
 }
 
 export const TrustBar: React.FC = () => {
+  const { t } = useLanguage();
+
   const logos: TechLogo[] = [
     {
       name: "VS Code",
@@ -64,7 +69,7 @@ export const TrustBar: React.FC = () => {
           <div className="flex items-center gap-3 select-none">
             <span className="w-1.5 h-1.5 rounded-full bg-purple-500/60" />
             <p className="text-xs sm:text-sm font-medium uppercase tracking-wider text-gray-400">
-              Geliştiricilerin güvendiği platform
+              {t("trust.label")}
             </p>
           </div>
 

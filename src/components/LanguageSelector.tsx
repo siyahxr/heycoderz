@@ -143,9 +143,6 @@ export const LanguageSelector: React.FC = () => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Hidden Translate Anchor */}
-      <div id="google_translate_element" style={{ display: "none", height: 0, overflow: "hidden" }} />
-
       {/* Trigger Button */}
       <button
         type="button"
