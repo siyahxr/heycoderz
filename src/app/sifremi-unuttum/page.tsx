@@ -49,7 +49,11 @@ export default function ForgotPasswordPage() {
         }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {}
+
       setLoading(false);
 
       if (res.ok && data.success) {
@@ -66,7 +70,7 @@ export default function ForgotPasswordPage() {
           });
         }, 1000);
       } else {
-        setErrorMsg(data.message || "İstek işlenirken bir sorun oluştu. Lütfen tekrar deneyin.");
+        setErrorMsg(data?.message || "İstek işlenirken bir sorun oluştu. Lütfen tekrar deneyin.");
       }
     } catch {
       setLoading(false);

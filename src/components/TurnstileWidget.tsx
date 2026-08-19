@@ -15,13 +15,13 @@ export function TurnstileWidget({ onVerify, action = "login", className = "" }: 
   const widgetIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // We fetch the site key from env
-    const key = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+    // We fetch the site key from env or use the configured production site key
+    const key = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "0x4AAAAAAEV-dVAkdRK0wvAZ";
     const isPlaceholder = !key || key.includes("your_") || key.includes("placeholder");
     if (key && !isPlaceholder) {
       setSiteKey(key);
     } else {
-      // If site key is not configured, auto-verify with fallback token so login/register is not blocked
+      // In dev without a key, auto-verify after a small delay
       const timer = setTimeout(() => {
         onVerify("dev-bypass-token");
       }, 300);

@@ -67,13 +67,17 @@ function ResetPasswordContent() {
         }),
       });
 
-      const data = await res.json();
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {}
+
       setLoading(false);
 
       if (res.ok && data.success) {
         setIsSuccess(true);
       } else {
-        setErrorMsg(data.message || "Şifre sıfırlanamadı. Bağlantı süresi dolmuş olabilir.");
+        setErrorMsg(data?.message || "Şifre sıfırlanamadı. Bağlantı süresi dolmuş olabilir.");
       }
     } catch {
       setLoading(false);
