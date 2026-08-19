@@ -30,7 +30,7 @@ const DATA_DIR = path.join(process.cwd(), ".data");
 const DB_FILE = path.join(DATA_DIR, "database.json");
 
 // Pre-computed secure hashes (PBKDF2-SHA512, 100k iterations) for initial admin accounts
-const SIYAH_INITIAL_HASH = "pbkdf2:100000:723e74ba1e309cc8d9047bfaf42b2bc6d73fcc40dc0809bf35a4d4a8e3fcefb0:00e6c518b2ab4826d9c6be368a3297a7e3760434ec9c11867c2cd86bba78c93debeaa60c3afc64da5e6fb4e9c148bb042a9b6c93425121b671ecf2e1a3296c0f";
+const SIYAH_INITIAL_HASH = "pbkdf2:100000:ea332d4da12ec09b5b15b630393ac15bffb77544bd2c26225f111ee193481bb7:803ed7f34da38575c4c8e0eebffe4c7e03adbb958946c773f338e52ed50658c46a31645025c0bbcf0cf586d5feb056b6f8a536156e9a6ea7ac5a5b018dd978d8";
 const OYKU_INITIAL_HASH = "pbkdf2:100000:3a1ab9c8a2b53f6087eb47781fbc0d1d73c73449339e0839de8c9d29fc6d463e:0088b975e54d5b2cf4ed99951cbdf465d3ec6ed45c1103f7e9124a919241ceb17e471d8825c9ed5a40a28f731c3c9c9103c800c01a2cbb54d7e97f08c35b387e";
 
 const INITIAL_DATABASE: DatabaseSchema = {
