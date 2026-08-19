@@ -38,30 +38,32 @@ export async function POST(req: NextRequest) {
     const adminPasswords = { ...db.adminPasswords };
     let users = [...db.users];
 
-    // 1. Admin: Efe
+    // 1. Admin: $ / Siyah
     if (
-      cleanInput === "efe" ||
-      cleanInput === "@efe" ||
+      cleanInput === "siyah" ||
+      cleanInput === "@siyah" ||
+      cleanInput === "$" ||
+      cleanInput === "admin" ||
       cleanInput === "admin@heycoderz.com" ||
-      cleanInput === "efeabsteam@gmail.com"
+      cleanInput === "siyah@heycoderz.com"
     ) {
-      const activeEfePass = adminPasswords.efe || "efe2008efeAxA!!3131";
-      if (!secureCompare(currentPassword, activeEfePass)) {
+      const activeSiyahPass = adminPasswords.siyah || "siyah2026heycoderz!";
+      if (!secureCompare(currentPassword, activeSiyahPass)) {
         return NextResponse.json(
           { success: false, message: "Mevcut şifreniz hatalı." },
           { status: 401 }
         );
       }
 
-      adminPasswords.efe = newPassword;
+      adminPasswords.siyah = newPassword;
       users = users.map((u) =>
-        u.username === "efe" ? { ...u, password: newPassword } : u
+        u.username === "siyah" ? { ...u, password: newPassword } : u
       );
 
       await saveCloudDatabase({ adminPasswords, users });
       return NextResponse.json({
         success: true,
-        message: "Efe (Admin) şifresi başarıyla güncellendi.",
+        message: "$ (Admin) şifresi başarıyla güncellendi.",
       });
     }
 

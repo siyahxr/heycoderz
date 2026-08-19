@@ -504,7 +504,7 @@ export default function DashboardPage() {
 
                         <button
                           type="button"
-                          onClick={() => setEditAvatar(`https://api.dicebear.com/7.x/bottts/svg?seed=${Date.now()}`)}
+                          onClick={() => setEditAvatar(`https://api.dicebear.com/7.x/shapes/svg?seed=${Date.now()}`)}
                           className="px-3.5 py-2 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-mono text-gray-300 rounded-xl cursor-pointer"
                         >
                           🎲 Rastgele Avatar Üret

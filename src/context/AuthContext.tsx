@@ -22,19 +22,19 @@ export interface UserProfile {
   joinedAt: string;
 }
 
-export const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/bottts/svg?seed=heycoderz";
+export const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80";
 
-export const BASE_EFE: UserProfile = {
+export const BASE_MAIN_USER: UserProfile = {
   id: "admin-master",
-  name: "Efe Taşkın",
-  username: "efe",
-  email: "efeabsteam@gmail.com",
-  avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=heycoderz-dev",
+  name: "$",
+  username: "siyah",
+  email: "siyah@heycoderz.com",
+  avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80",
   role: "admin",
   badge: "Kurucu & Admin",
-  bio: "heycoderz kurucusu. Açık kaynak aşığı, Next.js, React ve Cloud mimarisi geliştiricisi.",
+  bio: "heycoderz kurucusu ve geliştiricisi.",
   website: "https://heycoderz.com",
-  github: "https://github.com/heycoderz",
+  github: "https://github.com/siyahxr",
   twitter: "https://twitter.com/heycoderz",
   instagram: "https://instagram.com/heycoderz",
   linkedin: "https://linkedin.com/company/heycoderz",
@@ -137,19 +137,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Offline / client fallback
     }
 
-    // Client fallback: Check Admin credentials for @efe
-    if (input === "efeabsteam@gmail.com" || input === "efe" || input === "@efe" || input === "admin@heycoderz.com") {
-      const savedPass = localStorage.getItem("heycoderz_efe_custom_pwd") || "efe2008efeAxA!!3131";
-      if (secureCompare(pass, savedPass) || secureCompare(pass, "efe2008efeAxA!!3131")) {
+    // Client fallback: Check Admin credentials for $ / @siyah
+    if (input === "siyah@heycoderz.com" || input === "siyah" || input === "@siyah" || input === "$" || input === "admin") {
+      const savedPass = localStorage.getItem("heycoderz_siyah_custom_pwd") || "siyah2026heycoderz!";
+      if (secureCompare(pass, savedPass) || secureCompare(pass, "siyah2026heycoderz!")) {
         const adminUser: UserProfile = {
-          ...BASE_EFE,
-          avatar: localStorage.getItem("heycoderz_admin_avatar") || BASE_EFE.avatar,
+          ...BASE_MAIN_USER,
+          avatar: localStorage.getItem("heycoderz_siyah_avatar") || BASE_MAIN_USER.avatar,
         };
         setUser(adminUser);
         localStorage.setItem("heycoderz_active_user", JSON.stringify(adminUser));
         return { success: true };
       } else {
-        return { success: false, message: "Efe (Admin) şifresi hatalı!" };
+        return { success: false, message: "$ (Admin) şifresi hatalı!" };
       }
     }
 
@@ -195,7 +195,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       name: input.includes("@") ? input.split("@")[0] : input,
       username: input.includes("@") ? input.split("@")[0] : input,
       email: input.includes("@") ? input : `${input}@heycoderz.com`,
-      avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${input}`,
+      avatar: DEFAULT_AVATAR,
       role: "developer",
       badge: "Geliştirici",
       bio: "heycoderz geliştirici topluluğu üyesi.",
@@ -239,7 +239,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       name: cleanName,
       username: cleanUsername || "dev" + Math.floor(Math.random() * 1000),
       email: cleanEmail,
-      avatar: `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanUsername || "dev"}`,
+      avatar: DEFAULT_AVATAR,
       role: "developer",
       badge: "Yeni Geliştirici 🚀",
       bio: "heycoderz ile kodlamaya başladım!",
@@ -289,7 +289,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.setItem("heycoderz_active_user", JSON.stringify(updated));
 
       if (updated.avatar) {
-        if (updated.username === "efe") localStorage.setItem("heycoderz_admin_avatar", updated.avatar);
+        if (updated.username === "siyah") localStorage.setItem("heycoderz_siyah_avatar", updated.avatar);
         if (updated.username === "oyku") localStorage.setItem("heycoderz_oyku_avatar", updated.avatar);
       }
 
@@ -338,8 +338,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await res.json();
 
       if (data.success) {
-        if (user.username === "efe") {
-          localStorage.setItem("heycoderz_efe_custom_pwd", newPass);
+        if (user.username === "siyah") {
+          localStorage.setItem("heycoderz_siyah_custom_pwd", newPass);
         } else if (user.username === "oyku") {
           localStorage.setItem("heycoderz_oyku_custom_pwd", newPass);
         } else {

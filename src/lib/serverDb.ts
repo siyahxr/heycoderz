@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { BASE_EFE, BASE_OYKU, UserProfile } from "@/context/AuthContext";
+import { BASE_MAIN_USER, BASE_OYKU, UserProfile } from "@/context/AuthContext";
 import { BlogArticle } from "@/context/BlogContext";
 import { CommunityPost } from "@/context/CommunityContext";
 import { JobListing } from "@/app/ilanlar/page";
@@ -12,7 +12,7 @@ export interface StoredUser extends UserProfile {
 export interface DatabaseSchema {
   users: StoredUser[];
   adminPasswords: {
-    efe: string;
+    siyah: string;
     oyku: string;
   };
   posts: CommunityPost[];
@@ -28,8 +28,8 @@ const DB_FILE = path.join(DATA_DIR, "database.json");
 const INITIAL_DATABASE: DatabaseSchema = {
   users: [
     {
-      ...BASE_EFE,
-      password: "efe2008efeAxA!!3131",
+      ...BASE_MAIN_USER,
+      password: "siyah2026heycoderz!",
     },
     {
       ...BASE_OYKU,
@@ -37,7 +37,7 @@ const INITIAL_DATABASE: DatabaseSchema = {
     },
   ],
   adminPasswords: {
-    efe: "efe2008efeAxA!!3131",
+    siyah: "siyah2026heycoderz!",
     oyku: "oyku2026heycoderz!",
   },
   posts: [],

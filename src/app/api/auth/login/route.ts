@@ -31,34 +31,36 @@ export async function POST(req: NextRequest) {
     const cleanInput = sanitizeInput(emailOrUsername.trim().toLowerCase());
     const pass = String(password);
     const db = await fetchCloudDatabase();
-    const activeEfePass = db.adminPasswords?.efe || "efe2008efeAxA!!3131";
+    const activeSiyahPass = db.adminPasswords?.siyah || "siyah2026heycoderz!";
     const activeOykuPass = db.adminPasswords?.oyku || "oyku2026heycoderz!";
 
-    // 2. Check Admin: Efe (Timing-safe comparison)
+    // 2. Check Admin: $ / Siyah (Timing-safe comparison)
     if (
-      cleanInput === "efeabsteam@gmail.com" || 
-      cleanInput === "efe" || 
-      cleanInput === "@efe" || 
+      cleanInput === "siyah@heycoderz.com" || 
+      cleanInput === "siyah" || 
+      cleanInput === "@siyah" || 
+      cleanInput === "$" || 
+      cleanInput === "admin" ||
       cleanInput === "admin@heycoderz.com"
     ) {
-      if (secureCompare(pass, activeEfePass) || secureCompare(pass, "efe2008efeAxA!!3131")) {
-        const efeUser = db.users.find(u => u.username === "efe") || {
+      if (secureCompare(pass, activeSiyahPass) || secureCompare(pass, "siyah2026heycoderz!")) {
+        const siyahUser = db.users.find(u => u.username === "siyah") || {
           id: "admin-master",
-          name: "Efe Taşkın",
-          username: "efe",
-          email: "efeabsteam@gmail.com",
+          name: "$",
+          username: "siyah",
+          email: "siyah@heycoderz.com",
           role: "admin",
           badge: "Kurucu & Admin",
         };
 
-        const { password: _, ...safeUser } = efeUser as any;
+        const { password: _, ...safeUser } = siyahUser as any;
         const response = NextResponse.json({
           success: true,
           user: safeUser,
         });
 
         // Set secure session cookie
-        response.cookies.set("heycoderz_session", "admin-efe-auth", {
+        response.cookies.set("heycoderz_session", "admin-siyah-auth", {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "lax",

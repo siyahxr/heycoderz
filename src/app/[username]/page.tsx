@@ -20,7 +20,7 @@ import {
   Sparkles,
   ExternalLink
 } from "lucide-react";
-import { UserProfile, useAuth, BASE_EFE, BASE_OYKU } from "@/context/AuthContext";
+import { UserProfile, useAuth, BASE_MAIN_USER, BASE_OYKU } from "@/context/AuthContext";
 import { useCommunity, formatTimeAgo } from "@/context/CommunityContext";
 
 export default function PublicProfilePage() {
@@ -44,17 +44,17 @@ export default function PublicProfilePage() {
     // 1. Initial quick load from local cache or current user
     let initialUser: UserProfile | null = null;
 
-    if (username === "efe" || username === "efecan" || username === "admin") {
-      initialUser = BASE_EFE;
+    if (username === "siyah" || username === "$" || username === "admin") {
+      initialUser = BASE_MAIN_USER;
       try {
-        const customSaved = localStorage.getItem("heycoderz_admin_profile_custom");
+        const customSaved = localStorage.getItem("heycoderz_siyah_profile_custom");
         if (customSaved) {
           initialUser = { ...initialUser, ...JSON.parse(customSaved) };
         }
         const activeUserStr = localStorage.getItem("heycoderz_active_user");
         if (activeUserStr) {
           const parsed = JSON.parse(activeUserStr);
-          if (parsed.username === "efe" || parsed.email === "efeabsteam@gmail.com") {
+          if (parsed.username === "siyah" || parsed.email === "siyah@heycoderz.com") {
             initialUser = { ...initialUser, ...parsed };
           }
         }
@@ -98,12 +98,13 @@ export default function PublicProfilePage() {
         if (data?.success && Array.isArray(data.users)) {
           const cloudUser = data.users.find(
             (u: any) =>
-              u.username.toLowerCase() === username ||
-              (username === "efe" && (u.username === "efe" || u.email === "efeabsteam@gmail.com")) ||
+              u.username?.toLowerCase() === username ||
+              (username === "siyah" && (u.username === "siyah" || u.email === "siyah@heycoderz.com")) ||
+              (username === "$" && (u.username === "siyah" || u.name === "$")) ||
               (username === "oyku" && (u.username === "oyku" || u.email === "oyku@heycoderz.com"))
           );
           if (cloudUser) {
-            setProfile((prev) => ({ ...(prev || BASE_EFE), ...cloudUser }));
+            setProfile((prev) => ({ ...(prev || BASE_MAIN_USER), ...cloudUser }));
           }
         }
       })
@@ -183,7 +184,7 @@ export default function PublicProfilePage() {
                 {/* Avatar with Badges */}
                 <div className="relative shrink-0">
                   <img
-                    src={profile.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.username}`}
+                    src={profile.avatar || `https://api.dicebear.com/7.x/shapes/svg?seed=${profile.username}`}
                     alt={profile.name}
                     className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-purple-500/50 shadow-2xl shadow-purple-950/80"
                   />

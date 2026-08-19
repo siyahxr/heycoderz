@@ -578,17 +578,47 @@ export default function SettingsPage() {
                         type="button"
                         onClick={() => {
                           const seed = Math.floor(Math.random() * 1000000);
-                          setAvatarUrl(`https://api.dicebear.com/7.x/bottts/svg?seed=${seed}`);
+                          const styles = ["shapes", "identicon", "lorelei", "avataaars", "micah"];
+                          const randomStyle = styles[Math.floor(Math.random() * styles.length)];
+                          setAvatarUrl(`https://api.dicebear.com/7.x/${randomStyle}/svg?seed=${seed}`);
                         }}
                         className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-xs font-medium transition-all cursor-pointer"
                       >
                         <RefreshCw className="w-3.5 h-3.5" />
-                        <span>Rastgele Avatar Üret</span>
+                        <span>Rastgele Modern Avatar Üret</span>
                       </button>
                     </div>
                     <p className="text-[11px] text-gray-500">
                       PNG, JPG, WebP veya SVG formatı (Maks. 2MB).
                     </p>
+                  </div>
+                </div>
+
+                {/* Preset Avatars */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-medium text-gray-300">Önerilen Modern Avatarlar</label>
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-3">
+                    {[
+                      "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80",
+                      "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80",
+                      "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+                      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
+                      "https://api.dicebear.com/7.x/shapes/svg?seed=heycoderz_siyah",
+                      "https://api.dicebear.com/7.x/identicon/svg?seed=cyber_siyah",
+                      "https://api.dicebear.com/7.x/lorelei/svg?seed=siyah_dev",
+                      "https://api.dicebear.com/7.x/avataaars/svg?seed=dark_coder"
+                    ].map((presetUrl, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setAvatarUrl(presetUrl)}
+                        className={`p-1 rounded-xl border transition-all overflow-hidden ${
+                          avatarUrl === presetUrl ? "border-purple-500 bg-purple-500/20 scale-105" : "border-white/10 hover:border-white/30"
+                        }`}
+                      >
+                        <img src={presetUrl} alt="Preset" className="w-full h-12 rounded-lg object-cover" />
+                      </button>
+                    ))}
                   </div>
                 </div>
 
