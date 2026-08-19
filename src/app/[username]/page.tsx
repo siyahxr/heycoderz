@@ -41,6 +41,14 @@ export default function PublicProfilePage() {
       return;
     }
 
+    // If username is a reserved route name
+    if (username === "kesfet") {
+      if (typeof window !== "undefined") {
+        window.location.replace("/kesfet");
+      }
+      return;
+    }
+
     // Redirect legacy efe profile to new $ / siyah profile and clear old cache
     if (username === "efe" || username === "efecan") {
       try {
