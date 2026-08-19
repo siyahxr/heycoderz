@@ -29,8 +29,29 @@ function getAppBaseUrl(): string {
 }
 
 /**
- * Builds the ultra-modern HTML email template for HeyCoderz Email Verification.
- * Optimized for Gmail Web/Mobile and dark mode rendering.
+ * Formats a clean, aesthetically shortened display URL
+ */
+function formatShortenedUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.host;
+    const pathname = parsed.pathname;
+    const token = parsed.searchParams.get("token") || "";
+    if (token.length > 18) {
+      return `${host}${pathname}?token=${token.substring(0, 10)}...${token.substring(token.length - 6)}`;
+    }
+    return `${host}${pathname}${parsed.search}`;
+  } catch {
+    if (url.length > 45) {
+      return url.substring(0, 32) + "..." + url.substring(url.length - 8);
+    }
+    return url;
+  }
+}
+
+/**
+ * Builds the ultra-clean, modern Light Theme HTML email template for HeyCoderz Email Verification.
+ * Optimized for Gmail Web/Mobile and light background clients.
  */
 export function buildVerificationEmailHtml({
   name,
@@ -40,6 +61,7 @@ export function buildVerificationEmailHtml({
   verificationUrl: string;
 }): string {
   const recipientName = name ? name : "Geliştirici";
+  const displayUrl = formatShortenedUrl(verificationUrl);
 
   return `<!DOCTYPE html>
 <html lang="tr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -56,64 +78,64 @@ export function buildVerificationEmailHtml({
       margin: 0 !important;
       padding: 0 !important;
       width: 100% !important;
-      background-color: #06050c;
+      background-color: #f1f5f9;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      color: #ffffff;
+      color: #0f172a;
     }
-    .btn-glow:hover {
-      background: #9333ea !important;
-      box-shadow: 0 0 30px rgba(168, 85, 247, 0.7) !important;
+    .btn-gradient:hover {
+      background: #6d28d9 !important;
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45) !important;
     }
     @media only screen and (max-width: 600px) {
       .email-container {
         width: 100% !important;
-        padding: 12px !important;
+        padding: 10px !important;
       }
       .main-card {
-        padding: 30px 18px !important;
+        padding: 32px 20px !important;
         border-radius: 20px !important;
       }
       .title-text {
-        font-size: 24px !important;
+        font-size: 22px !important;
       }
     }
   </style>
 </head>
-<body style="margin: 0; padding: 28px 12px; background-color: #06050c; color: #ffffff;">
-  <!-- Preheader preview text -->
-  <div style="display: none; font-size: 1px; color: #06050c; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-    HeyCoderz hesabını aktifleştirmek için e-posta adresini doğrula.
+<body style="margin: 0; padding: 32px 12px; background-color: #f1f5f9; color: #0f172a;">
+  <!-- Preheader text -->
+  <div style="display: none; font-size: 1px; color: #f1f5f9; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
+    HeyCoderz hesabını aktifleştirmek için lütfen e-posta adresini doğrula.
   </div>
 
-  <center style="width: 100%; background-color: #06050c;">
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 540px; margin: 0 auto;" class="email-container">
+  <center style="width: 100%; background-color: #f1f5f9;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 480px; margin: 0 auto;" class="email-container">
       
-      <!-- Top Brand Header -->
+      <!-- Top Brand Badge -->
       <tr>
         <td align="center" style="padding-bottom: 20px;">
           <table role="presentation" border="0" cellpadding="0" cellspacing="0">
             <tr>
-              <td align="center" style="background: linear-gradient(135deg, #1c1335 0%, #100b20 100%); border: 1px solid #7c3aed; border-radius: 12px; padding: 6px 16px; box-shadow: 0 0 15px rgba(124, 58, 237, 0.3);">
-                <span style="font-family: 'Courier New', Courier, monospace; font-size: 15px; font-weight: 800; color: #c084fc; letter-spacing: 1px;">&lt;/&gt;</span>
-                <span style="font-size: 15px; font-weight: 900; letter-spacing: 1.5px; color: #ffffff; margin-left: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">HEYCODERZ</span>
+              <td align="center" style="background-color: #1e1b4b; border-radius: 12px; padding: 8px 18px; box-shadow: 0 4px 12px rgba(30, 27, 75, 0.15);">
+                <span style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: 800; color: #c084fc; letter-spacing: 1px;">&lt;/&gt;</span>
+                <span style="font-size: 14px; font-weight: 900; letter-spacing: 1.5px; color: #ffffff; margin-left: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">HEYCODERZ</span>
               </td>
             </tr>
           </table>
         </td>
       </tr>
 
-      <!-- Main Card -->
+      <!-- Main Clean White Card -->
       <tr>
         <td>
-          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="main-card" style="background-color: #0d0b18; border: 1px solid #6d28d9; border-radius: 24px; padding: 40px 32px; box-shadow: 0 15px 50px rgba(0, 0, 0, 0.85), 0 0 35px rgba(124, 58, 237, 0.2);">
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="main-card" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px 36px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);">
             
-            <!-- Neon Glowing Envelope Graphic -->
+            <!-- Modern Soft Purple Icon Container -->
             <tr>
-              <td align="center" style="padding-bottom: 24px;">
+              <td align="center" style="padding-bottom: 20px;">
                 <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td align="center" style="background: linear-gradient(145deg, #241647 0%, #120b24 100%); border: 1.5px solid #a855f7; border-radius: 22px; width: 90px; height: 72px; text-align: center; vertical-align: middle; box-shadow: 0 0 30px rgba(168, 85, 247, 0.45);">
-                      <div style="font-size: 32px; line-height: 1; filter: drop-shadow(0 0 10px rgba(192, 132, 252, 0.8));">
+                    <td align="center" style="background-color: #f3e8ff; border: 1px solid #e9d5ff; border-radius: 20px; width: 68px; height: 68px; text-align: center; vertical-align: middle;">
+                      <div style="font-size: 30px; line-height: 1;">
                         ✉️
                       </div>
                     </td>
@@ -124,8 +146,8 @@ export function buildVerificationEmailHtml({
 
             <!-- Title -->
             <tr>
-              <td align="center" style="padding-bottom: 8px;">
-                <h1 class="title-text" style="margin: 0; font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+              <td align="center" style="padding-bottom: 12px;">
+                <h1 class="title-text" style="margin: 0; font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                   E-postanı Doğrula
                 </h1>
               </td>
@@ -133,23 +155,23 @@ export function buildVerificationEmailHtml({
 
             <!-- Greeting & Description -->
             <tr>
-              <td align="center" style="padding-bottom: 26px;">
-                <p style="margin: 12px 0 8px 0; font-size: 15px; font-weight: 700; color: #ffffff;">
+              <td align="center" style="padding-bottom: 24px;">
+                <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: 600; color: #1e293b;">
                   Merhaba ${recipientName},
                 </p>
-                <p style="margin: 0; font-size: 13px; line-height: 21px; color: #94a3b8; max-width: 430px;">
-                  HEY CODERZ topluluğuna katıldığın için heyecanlıyız! Hesabını güvence altına almak ve platformun tüm özelliklerine erişmek için lütfen e-posta adresini doğrula.
+                <p style="margin: 0; font-size: 14px; line-height: 22px; color: #475569; max-width: 380px;">
+                  HeyCoderz topluluğuna katıldığın için heyecanlıyız! Hesabını aktifleştirmek için lütfen e-posta adresini doğrula.
                 </p>
               </td>
             </tr>
 
-            <!-- CTA Button -->
+            <!-- Main CTA Button -->
             <tr>
               <td align="center" style="padding-bottom: 18px;">
                 <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td align="center" style="border-radius: 12px; background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%); box-shadow: 0 4px 20px rgba(168, 85, 247, 0.45);">
-                      <a href="${verificationUrl}" target="_blank" class="btn-glow" style="display: inline-block; padding: 14px 34px; font-size: 14px; font-weight: 700; color: #ffffff; text-decoration: none; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); letter-spacing: 0.3px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    <td align="center" style="border-radius: 12px; background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%); box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);">
+                      <a href="${verificationUrl}" target="_blank" class="btn-gradient" style="display: inline-block; padding: 14px 32px; font-size: 14px; font-weight: 700; color: #ffffff; text-decoration: none; border-radius: 12px; letter-spacing: 0.2px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                         E-postamı Doğrula &rarr;
                       </a>
                     </td>
@@ -158,13 +180,13 @@ export function buildVerificationEmailHtml({
               </td>
             </tr>
 
-            <!-- 15-Minute Expiry Badge -->
+            <!-- Expiry Pill Badge -->
             <tr>
-              <td align="center" style="padding-bottom: 24px;">
+              <td align="center" style="padding-bottom: 22px;">
                 <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td align="center" style="background-color: #151126; border: 1px solid #2e214d; border-radius: 20px; padding: 6px 14px;">
-                      <span style="font-size: 11px; color: #cbd5e1; font-weight: 500;">
+                    <td align="center" style="background-color: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 20px; padding: 6px 14px;">
+                      <span style="font-size: 12px; color: #6d28d9; font-weight: 600;">
                         ⏱ 15 dakika geçerlidir
                       </span>
                     </td>
@@ -173,12 +195,12 @@ export function buildVerificationEmailHtml({
               </td>
             </tr>
 
-            <!-- Fallback URL Box -->
+            <!-- Shortened Monospace Fallback URL Box -->
             <tr>
-              <td style="padding-bottom: 20px;">
-                <div style="background-color: #07060f; border: 1px solid #271e3d; border-radius: 10px; padding: 10px 12px; word-break: break-all; text-align: center;">
-                  <a href="${verificationUrl}" style="color: #a78bfa; font-size: 11px; font-family: 'Courier New', Courier, monospace; text-decoration: none; line-height: 16px;">
-                    ${verificationUrl}
+              <td style="padding-bottom: 18px;">
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; word-break: break-all; text-align: center;">
+                  <a href="${verificationUrl}" target="_blank" style="color: #475569; font-size: 11px; font-family: 'Courier New', Courier, monospace; text-decoration: none; line-height: 16px; font-weight: 500;">
+                    ${displayUrl}
                   </a>
                 </div>
               </td>
@@ -187,14 +209,14 @@ export function buildVerificationEmailHtml({
             <!-- Security Notice Box -->
             <tr>
               <td>
-                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #151126; border: 1px solid #2e214d; border-radius: 14px; padding: 14px 16px;">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 16px;">
                   <tr>
-                    <td width="32" style="vertical-align: middle; padding-right: 10px; font-size: 18px;">
+                    <td width="28" style="vertical-align: middle; padding-right: 8px; font-size: 16px;">
                       🛡️
                     </td>
                     <td style="vertical-align: middle;">
-                      <p style="margin: 0; font-size: 11px; line-height: 16px; color: #94a3b8;">
-                        <strong style="color: #ffffff; font-weight: 700;">Bu talebi siz yapmadınız mı?</strong> Hesabınızın güvenliği için bu e-postayı görmezden gelebilirsiniz.
+                      <p style="margin: 0; font-size: 11px; line-height: 16px; color: #64748b;">
+                        Bu talebi siz yapmadınız mı? Bu e-postayı güvenle yok sayabilirsiniz.
                       </p>
                     </td>
                   </tr>
@@ -213,7 +235,7 @@ export function buildVerificationEmailHtml({
 }
 
 /**
- * Builds the plain text fallback version of the verification email
+ * Builds plain text fallback for email verification
  */
 export function buildVerificationEmailText({
   name,
@@ -229,7 +251,7 @@ export function buildVerificationEmailText({
 E-postanı Doğrula
 
 ${greeting}
-HEY CODERZ topluluğuna katıldığın için heyecanlıyız! Hesabını aktifleştirmek için lütfen aşağıdaki doğrulama bağlantısına tıkla:
+HeyCoderz topluluğuna katıldığın için heyecanlıyız! Hesabını aktifleştirmek için lütfen aşağıdaki doğrulama bağlantısına tıkla:
 
 ${verificationUrl}
 
@@ -314,7 +336,7 @@ export async function sendVerificationEmail({
 }
 
 /**
- * Builds the ultra-modern HTML email template for HeyCoderz Password Reset.
+ * Builds the ultra-clean, modern Light Theme HTML email template for HeyCoderz Password Reset.
  */
 export function buildPasswordResetEmailHtml({
   name,
@@ -324,6 +346,7 @@ export function buildPasswordResetEmailHtml({
   resetUrl: string;
 }): string {
   const recipientName = name ? name : "Geliştirici";
+  const displayUrl = formatShortenedUrl(resetUrl);
 
   return `<!DOCTYPE html>
 <html lang="tr" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -340,64 +363,64 @@ export function buildPasswordResetEmailHtml({
       margin: 0 !important;
       padding: 0 !important;
       width: 100% !important;
-      background-color: #06050c;
+      background-color: #f1f5f9;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      color: #ffffff;
+      color: #0f172a;
     }
-    .btn-glow:hover {
-      background: #9333ea !important;
-      box-shadow: 0 0 30px rgba(168, 85, 247, 0.7) !important;
+    .btn-gradient:hover {
+      background: #6d28d9 !important;
+      box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45) !important;
     }
     @media only screen and (max-width: 600px) {
       .email-container {
         width: 100% !important;
-        padding: 12px !important;
+        padding: 10px !important;
       }
       .main-card {
-        padding: 30px 18px !important;
+        padding: 32px 20px !important;
         border-radius: 20px !important;
       }
       .title-text {
-        font-size: 24px !important;
+        font-size: 22px !important;
       }
     }
   </style>
 </head>
-<body style="margin: 0; padding: 28px 12px; background-color: #06050c; color: #ffffff;">
+<body style="margin: 0; padding: 32px 12px; background-color: #f1f5f9; color: #0f172a;">
   <!-- Preheader text -->
-  <div style="display: none; font-size: 1px; color: #06050c; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
+  <div style="display: none; font-size: 1px; color: #f1f5f9; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
     HeyCoderz hesabın için şifre sıfırlama bağlantısı.
   </div>
 
-  <center style="width: 100%; background-color: #06050c;">
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 540px; margin: 0 auto;" class="email-container">
+  <center style="width: 100%; background-color: #f1f5f9;">
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 480px; margin: 0 auto;" class="email-container">
       
-      <!-- Top Brand Header -->
+      <!-- Top Brand Badge -->
       <tr>
         <td align="center" style="padding-bottom: 20px;">
           <table role="presentation" border="0" cellpadding="0" cellspacing="0">
             <tr>
-              <td align="center" style="background: linear-gradient(135deg, #1c1335 0%, #100b20 100%); border: 1px solid #7c3aed; border-radius: 12px; padding: 6px 16px; box-shadow: 0 0 15px rgba(124, 58, 237, 0.3);">
-                <span style="font-family: 'Courier New', Courier, monospace; font-size: 15px; font-weight: 800; color: #c084fc; letter-spacing: 1px;">&lt;/&gt;</span>
-                <span style="font-size: 15px; font-weight: 900; letter-spacing: 1.5px; color: #ffffff; margin-left: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">HEYCODERZ</span>
+              <td align="center" style="background-color: #1e1b4b; border-radius: 12px; padding: 8px 18px; box-shadow: 0 4px 12px rgba(30, 27, 75, 0.15);">
+                <span style="font-family: 'Courier New', Courier, monospace; font-size: 14px; font-weight: 800; color: #c084fc; letter-spacing: 1px;">&lt;/&gt;</span>
+                <span style="font-size: 14px; font-weight: 900; letter-spacing: 1.5px; color: #ffffff; margin-left: 8px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">HEYCODERZ</span>
               </td>
             </tr>
           </table>
         </td>
       </tr>
 
-      <!-- Main Card -->
+      <!-- Main Clean White Card -->
       <tr>
         <td>
-          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="main-card" style="background-color: #0d0b18; border: 1px solid #6d28d9; border-radius: 24px; padding: 40px 32px; box-shadow: 0 15px 50px rgba(0, 0, 0, 0.85), 0 0 35px rgba(124, 58, 237, 0.2);">
+          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" class="main-card" style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; padding: 40px 36px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);">
             
-            <!-- Key / Security Graphic -->
+            <!-- Modern Soft Purple Icon Container -->
             <tr>
-              <td align="center" style="padding-bottom: 24px;">
+              <td align="center" style="padding-bottom: 20px;">
                 <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td align="center" style="background: linear-gradient(145deg, #241647 0%, #120b24 100%); border: 1.5px solid #a855f7; border-radius: 22px; width: 90px; height: 72px; text-align: center; vertical-align: middle; box-shadow: 0 0 30px rgba(168, 85, 247, 0.45);">
-                      <div style="font-size: 32px; line-height: 1; filter: drop-shadow(0 0 10px rgba(192, 132, 252, 0.8));">
+                    <td align="center" style="background-color: #f3e8ff; border: 1px solid #e9d5ff; border-radius: 20px; width: 68px; height: 68px; text-align: center; vertical-align: middle;">
+                      <div style="font-size: 30px; line-height: 1;">
                         🔑
                       </div>
                     </td>
@@ -408,8 +431,8 @@ export function buildPasswordResetEmailHtml({
 
             <!-- Title -->
             <tr>
-              <td align="center" style="padding-bottom: 8px;">
-                <h1 class="title-text" style="margin: 0; font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+              <td align="center" style="padding-bottom: 12px;">
+                <h1 class="title-text" style="margin: 0; font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: -0.4px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                   Şifreni Sıfırla
                 </h1>
               </td>
@@ -417,23 +440,23 @@ export function buildPasswordResetEmailHtml({
 
             <!-- Greeting & Description -->
             <tr>
-              <td align="center" style="padding-bottom: 26px;">
-                <p style="margin: 12px 0 8px 0; font-size: 15px; font-weight: 700; color: #ffffff;">
+              <td align="center" style="padding-bottom: 24px;">
+                <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: 600; color: #1e293b;">
                   Merhaba ${recipientName},
                 </p>
-                <p style="margin: 0; font-size: 13px; line-height: 21px; color: #94a3b8; max-width: 430px;">
+                <p style="margin: 0; font-size: 14px; line-height: 22px; color: #475569; max-width: 380px;">
                   HeyCoderz hesabın için bir şifre sıfırlama talebinde bulunuldu. Yeni şifreni güvenli bir şekilde belirlemek için aşağıdaki butona tıkla.
                 </p>
               </td>
             </tr>
 
-            <!-- CTA Button -->
+            <!-- Main CTA Button -->
             <tr>
               <td align="center" style="padding-bottom: 18px;">
                 <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td align="center" style="border-radius: 12px; background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%); box-shadow: 0 4px 20px rgba(168, 85, 247, 0.45);">
-                      <a href="${resetUrl}" target="_blank" class="btn-glow" style="display: inline-block; padding: 14px 34px; font-size: 14px; font-weight: 700; color: #ffffff; text-decoration: none; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); letter-spacing: 0.3px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                    <td align="center" style="border-radius: 12px; background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%); box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);">
+                      <a href="${resetUrl}" target="_blank" class="btn-gradient" style="display: inline-block; padding: 14px 32px; font-size: 14px; font-weight: 700; color: #ffffff; text-decoration: none; border-radius: 12px; letter-spacing: 0.2px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
                         Şifremi Sıfırla &rarr;
                       </a>
                     </td>
@@ -442,13 +465,13 @@ export function buildPasswordResetEmailHtml({
               </td>
             </tr>
 
-            <!-- 15-Minute Expiry Badge -->
+            <!-- Expiry Pill Badge -->
             <tr>
-              <td align="center" style="padding-bottom: 24px;">
+              <td align="center" style="padding-bottom: 22px;">
                 <table role="presentation" border="0" cellpadding="0" cellspacing="0">
                   <tr>
-                    <td align="center" style="background-color: #151126; border: 1px solid #2e214d; border-radius: 20px; padding: 6px 14px;">
-                      <span style="font-size: 11px; color: #cbd5e1; font-weight: 500;">
+                    <td align="center" style="background-color: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 20px; padding: 6px 14px;">
+                      <span style="font-size: 12px; color: #6d28d9; font-weight: 600;">
                         ⏱ 15 dakika geçerlidir
                       </span>
                     </td>
@@ -457,12 +480,12 @@ export function buildPasswordResetEmailHtml({
               </td>
             </tr>
 
-            <!-- Fallback URL Box -->
+            <!-- Shortened Monospace Fallback URL Box -->
             <tr>
-              <td style="padding-bottom: 20px;">
-                <div style="background-color: #07060f; border: 1px solid #271e3d; border-radius: 10px; padding: 10px 12px; word-break: break-all; text-align: center;">
-                  <a href="${resetUrl}" style="color: #a78bfa; font-size: 11px; font-family: 'Courier New', Courier, monospace; text-decoration: none; line-height: 16px;">
-                    ${resetUrl}
+              <td style="padding-bottom: 18px;">
+                <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; word-break: break-all; text-align: center;">
+                  <a href="${resetUrl}" target="_blank" style="color: #475569; font-size: 11px; font-family: 'Courier New', Courier, monospace; text-decoration: none; line-height: 16px; font-weight: 500;">
+                    ${displayUrl}
                   </a>
                 </div>
               </td>
@@ -471,14 +494,14 @@ export function buildPasswordResetEmailHtml({
             <!-- Security Notice Box -->
             <tr>
               <td>
-                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #151126; border: 1px solid #2e214d; border-radius: 14px; padding: 14px 16px;">
+                <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px 16px;">
                   <tr>
-                    <td width="32" style="vertical-align: middle; padding-right: 10px; font-size: 18px;">
+                    <td width="28" style="vertical-align: middle; padding-right: 8px; font-size: 16px;">
                       🛡️
                     </td>
                     <td style="vertical-align: middle;">
-                      <p style="margin: 0; font-size: 11px; line-height: 16px; color: #94a3b8;">
-                        <strong style="color: #ffffff; font-weight: 700;">Bu talebi siz yapmadınız mı?</strong> Hesabınızın güvenliği için bu e-postayı görmezden gelebilir veya şifrenizi sıfırlayabilirsiniz.
+                      <p style="margin: 0; font-size: 11px; line-height: 16px; color: #64748b;">
+                        Bu talebi siz yapmadınız mı? Bu e-postayı güvenle yok sayabilir veya şifrenizi sıfırlayabilirsiniz.
                       </p>
                     </td>
                   </tr>
@@ -497,7 +520,7 @@ export function buildPasswordResetEmailHtml({
 }
 
 /**
- * Builds the plain text fallback version of the password reset email
+ * Builds plain text fallback for password reset
  */
 export function buildPasswordResetEmailText({
   name,
