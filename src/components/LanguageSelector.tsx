@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronDown, Check, Search, Globe } from "lucide-react";
+import { ChevronDown, Check, Search } from "lucide-react";
+import { useLanguage, LanguageCode } from "@/context/LanguageContext";
 
 export interface LanguageOption {
   code: string;
@@ -28,15 +29,16 @@ export const LANGUAGES: LanguageOption[] = [
 ];
 
 export const LanguageSelector: React.FC = () => {
+  const { setLanguage, language: currentContextLang } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [currentLang, setCurrentLang] = useState<LanguageOption>(LANGUAGES[0]);
   const [search, setSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Initialize invisible translation engine
+  // Initialize invisible translation engine & sync
   useEffect(() => {
-    // 1. Detect saved language
-    const saved = localStorage.getItem("heycoderz_language") || "tr";
+    // 1. Detect saved language from cookies or localStorage
+    const saved = localStorage.getItem("heycoderz_language") || currentContextLang || "tr";
     const found = LANGUAGES.find((l) => l.code === saved) || LANGUAGES[0];
     setCurrentLang(found);
 
@@ -56,14 +58,16 @@ export const LanguageSelector: React.FC = () => {
       } catch {}
     };
 
-    // 3. Inject script if not present
+    // 3. Inject script with https: protocol
     if (!document.getElementById("google-translate-script")) {
       const s = document.createElement("script");
       s.id = "google-translate-script";
       s.type = "text/javascript";
-      s.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      s.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
       s.async = true;
       document.body.appendChild(s);
+    } else if ((window as any).google?.translate?.TranslateElement) {
+      (window as any).googleTranslateElementInit();
     }
 
     // 4. Close on outside click
@@ -74,18 +78,23 @@ export const LanguageSelector: React.FC = () => {
     };
     document.addEventListener("mousedown", handleOutside);
     return () => document.removeEventListener("mousedown", handleOutside);
-  }, []);
+  }, [currentContextLang]);
 
   const handleSelectLanguage = (lang: LanguageOption) => {
     setCurrentLang(lang);
     setIsOpen(false);
     localStorage.setItem("heycoderz_language", lang.code);
+    localStorage.setItem("heycoderz_site_lang", lang.code);
+
+    try {
+      setLanguage(lang.code as LanguageCode);
+    } catch {}
+
+    const hostname = window.location.hostname;
+    const domainParts = hostname.split(".");
 
     if (lang.code === "tr") {
       // Clear cookie to revert back to native Turkish
-      const hostname = window.location.hostname;
-      const domainParts = hostname.split(".");
-      
       document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=${hostname}; path=/;`;
       document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=.${hostname}; path=/;`;
@@ -94,9 +103,6 @@ export const LanguageSelector: React.FC = () => {
         const rootDomain = domainParts.slice(-2).join(".");
         document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=.${rootDomain}; path=/;`;
       }
-
-      localStorage.removeItem("heycoderz_site_lang");
-      localStorage.setItem("heycoderz_language", "tr");
 
       const combo = document.querySelector(".goog-te-combo") as HTMLSelectElement;
       if (combo) {
@@ -110,17 +116,22 @@ export const LanguageSelector: React.FC = () => {
     // Set translation cookie for whole domain & path
     const cookieVal = `/tr/${lang.code}`;
     document.cookie = `googtrans=${cookieVal}; path=/;`;
-    document.cookie = `googtrans=${cookieVal}; domain=${window.location.hostname}; path=/;`;
-    document.cookie = `googtrans=${cookieVal}; domain=.${window.location.hostname}; path=/;`;
+    document.cookie = `googtrans=${cookieVal}; domain=${hostname}; path=/;`;
+    document.cookie = `googtrans=${cookieVal}; domain=.${hostname}; path=/;`;
+    if (domainParts.length >= 2) {
+      const rootDomain = domainParts.slice(-2).join(".");
+      document.cookie = `googtrans=${cookieVal}; domain=.${rootDomain}; path=/;`;
+    }
 
-    // Trigger instant DOM translation via combo element
+    // Trigger instant DOM translation via combo element or reload
     const combo = document.querySelector(".goog-te-combo") as HTMLSelectElement;
     if (combo) {
       combo.value = lang.code;
       combo.dispatchEvent(new Event("change"));
-    } else {
-      window.location.reload();
     }
+    
+    // Reload to apply Google Translate across all DOM nodes and Next.js SSR trees
+    window.location.reload();
   };
 
   const filtered = LANGUAGES.filter(
