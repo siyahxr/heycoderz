@@ -41,6 +41,22 @@ export default function PublicProfilePage() {
       return;
     }
 
+    // Redirect legacy efe profile to new $ / siyah profile and clear old cache
+    if (username === "efe" || username === "efecan") {
+      try {
+        localStorage.removeItem("heycoderz_admin_profile_custom");
+        localStorage.removeItem("heycoderz_admin_avatar");
+        const active = localStorage.getItem("heycoderz_active_user");
+        if (active && JSON.parse(active).username === "efe") {
+          localStorage.removeItem("heycoderz_active_user");
+        }
+      } catch {}
+      if (typeof window !== "undefined") {
+        window.location.replace("/@siyah");
+      }
+      return;
+    }
+
     // 1. Initial quick load from local cache or current user
     let initialUser: UserProfile | null = null;
 

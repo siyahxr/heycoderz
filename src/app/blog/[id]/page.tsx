@@ -279,7 +279,7 @@ ${article.content}`;
 
           <div className="flex items-center justify-between gap-4 pt-2 text-xs text-gray-400">
             <Link
-              href={`/@${article.author.toLowerCase().includes("efe") ? "efe" : article.author.toLowerCase().includes("oyku") || article.author.toLowerCase().includes("öykü") ? "oyku" : "efe"}`}
+              href={`/@${article.author.toLowerCase().includes("oyku") || article.author.toLowerCase().includes("öykü") ? "oyku" : "siyah"}`}
               className="flex items-center gap-3 group/author cursor-pointer"
             >
               <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-md group-hover/author:ring-2 group-hover/author:ring-purple-400 transition-all">

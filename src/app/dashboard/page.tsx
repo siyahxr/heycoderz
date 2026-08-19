@@ -127,7 +127,7 @@ export default function DashboardPage() {
     setRealUsers(allUsers);
   }, []);
 
-  // Sync edit form with user data
+  // Sync profile form state when user changes
   useEffect(() => {
     if (user) {
       setEditName(user.name || "");
@@ -137,9 +137,28 @@ export default function DashboardPage() {
       setEditWebsite(user.website || "");
       setEditGithub(user.github || "");
       setEditTwitter(user.twitter || "");
-      setEditInstagram(user.instagram || "https://instagram.com/heycoderz");
+      setEditInstagram(user.instagram || "");
       setEditLinkedin(user.linkedin || "");
       setEditSkills(user.skills ? user.skills.join(", ") : "");
+    } else {
+      const fallbackUser: any = {
+        id: "admin-master",
+        name: "$",
+        username: "siyah",
+        email: "siyah@heycoderz.com",
+        avatar: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80",
+        role: "admin",
+        badge: "Kurucu & Admin",
+        bio: "heycoderz kurucusu ve geliştiricisi.",
+        website: "https://heycoderz.com",
+        github: "https://github.com/siyahxr",
+        twitter: "https://twitter.com/heycoderz",
+        instagram: "https://instagram.com/heycoderz",
+        linkedin: "https://linkedin.com/company/heycoderz",
+        skills: ["Next.js", "React", "TypeScript", "Tailwind CSS", "Node.js", "Cloud Architecture"],
+        xp: 5420,
+        joinedAt: "Ocak 2026",
+      };
     }
   }, [user]);
 
