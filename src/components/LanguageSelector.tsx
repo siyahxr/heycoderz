@@ -83,9 +83,20 @@ export const LanguageSelector: React.FC = () => {
 
     if (lang.code === "tr") {
       // Clear cookie to revert back to native Turkish
+      const hostname = window.location.hostname;
+      const domainParts = hostname.split(".");
+      
       document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=${window.location.hostname}; path=/;`;
-      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=.${window.location.hostname}; path=/;`;
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=${hostname}; path=/;`;
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=.${hostname}; path=/;`;
+      
+      if (domainParts.length >= 2) {
+        const rootDomain = domainParts.slice(-2).join(".");
+        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=.${rootDomain}; path=/;`;
+      }
+
+      localStorage.removeItem("heycoderz_site_lang");
+      localStorage.setItem("heycoderz_language", "tr");
 
       const combo = document.querySelector(".goog-te-combo") as HTMLSelectElement;
       if (combo) {
