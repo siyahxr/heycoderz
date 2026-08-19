@@ -21,8 +21,10 @@ import {
   UserPlus
 } from "lucide-react";
 import { UserProfile, BASE_MAIN_USER, BASE_OYKU } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function KesfetPage() {
+  const { t } = useLanguage();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -99,38 +101,38 @@ export default function KesfetPage() {
         <div className="text-center space-y-4 max-w-3xl mx-auto mb-10">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/60 border border-purple-500/30 text-purple-300 text-xs font-semibold backdrop-blur-xl">
             <Compass className="w-3.5 h-3.5 text-purple-400 animate-spin-slow" />
-            <span>Geliştirici Topluluğu & Vitrini</span>
+            <span>{t("explore.badge")}</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white">
-            Yetenekleri{" "}
+            {t("explore.titlePrefix")}{" "}
             <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
-              Keşfet
+              {t("explore.titleHighlight")}
             </span>
           </h1>
 
           <p className="text-sm sm:text-base text-gray-400 max-w-xl mx-auto">
-            Hey Coder'z ekosistemindeki tüm geliştiricileri, kurucuları ve yeni katılan yetenekleri keşfedin, profillerini inceleyin.
+            {t("explore.description")}
           </p>
 
           {/* Quick Stats Bar */}
           <div className="flex flex-wrap items-center justify-center gap-6 pt-2 text-xs text-gray-400">
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.03] border border-white/10">
               <Users className="w-4 h-4 text-purple-400" />
-              <span>Toplam Üye: <strong className="text-white font-mono">{totalMembers}</strong></span>
+              <span>{t("explore.totalMembers")}: <strong className="text-white font-mono">{totalMembers}</strong></span>
             </div>
             <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white/[0.03] border border-white/10">
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Yönetim: <strong className="text-white font-mono">{adminCount}</strong></span>
+              <span>{t("explore.management")}: <strong className="text-white font-mono">{adminCount}</strong></span>
             </div>
             <button
               onClick={handleManualRefresh}
               disabled={refreshing}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-gray-300 hover:text-white transition-all cursor-pointer"
-              title="Listeyi Yenile"
+              title={t("common.refresh")}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin text-purple-400" : ""}`} />
-              <span>Yenile</span>
+              <span>{t("common.refresh")}</span>
             </button>
           </div>
         </div>
@@ -144,7 +146,7 @@ export default function KesfetPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="İsim, @kullanıcı veya teknoloji ara (örn: React)..."
+              placeholder={t("explore.searchPlaceholder")}
               className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-white text-xs placeholder:text-gray-500 focus:border-purple-500 focus:outline-none transition-all"
             />
           </div>
@@ -152,10 +154,10 @@ export default function KesfetPage() {
           {/* Filter Pills */}
           <div className="flex flex-wrap gap-1.5 w-full sm:w-auto justify-start sm:justify-end">
             {[
-              { id: "all", label: "Tüm Üyeler" },
-              { id: "admin", label: "Yönetim & Kurucular" },
-              { id: "new", label: "Yeni Katılanlar" },
-              { id: "top_xp", label: "En Yüksek XP" },
+              { id: "all", label: t("explore.filterAll") },
+              { id: "admin", label: t("explore.filterAdmin") },
+              { id: "new", label: t("explore.filterNew") },
+              { id: "top_xp", label: t("explore.filterTopXp") },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -336,7 +338,7 @@ export default function KesfetPage() {
                       href={profileUrl}
                       className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600 border border-purple-500/30 hover:border-purple-500 text-purple-300 hover:text-white text-xs font-medium transition-all cursor-pointer"
                     >
-                      <span>Profili Gör</span>
+                      <span>{t("common.viewProfile")}</span>
                       <ExternalLink className="w-3 h-3" />
                     </Link>
                   </div>

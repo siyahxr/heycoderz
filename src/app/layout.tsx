@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { CommunityProvider } from "@/context/CommunityContext";
 import { BlogProvider } from "@/context/BlogContext";
+import { LanguageProvider } from "@/context/LanguageContext";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
@@ -35,13 +36,15 @@ export default function RootLayout({
   return (
     <html lang="tr" className={`${jakarta.variable} ${jetbrainsMono.variable} scroll-smooth`}>
       <body className="bg-[#030303] text-gray-100 min-h-screen flex flex-col font-sans selection:bg-purple-500/30 selection:text-white antialiased">
-        <AuthProvider>
-          <CommunityProvider>
-            <BlogProvider>
-              {children}
-            </BlogProvider>
-          </CommunityProvider>
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <CommunityProvider>
+              <BlogProvider>
+                {children}
+              </BlogProvider>
+            </CommunityProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </body>
     </html>
   );
