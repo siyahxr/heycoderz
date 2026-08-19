@@ -43,9 +43,9 @@ export const Navbar: React.FC = () => {
             <span className="text-white">&gt;</span>
           </div>
           <div className="flex items-baseline text-2xl font-bold tracking-tight">
-            <span className="text-white">hey</span>
-            <span className="bg-gradient-to-r from-purple-400 via-purple-500 to-indigo-400 bg-clip-text text-transparent">
-              coderz
+            <span className="text-white">Hey!</span>
+            <span className="bg-gradient-to-r from-purple-400 via-purple-500 to-indigo-400 bg-clip-text text-transparent ml-1.5">
+              Coder&apos;z
             </span>
           </div>
         </Link>
