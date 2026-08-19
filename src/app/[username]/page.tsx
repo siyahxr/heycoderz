@@ -20,8 +20,8 @@ import {
   Sparkles,
   ExternalLink
 } from "lucide-react";
-import { UserProfile, useAuth } from "@/context/AuthContext";
-import { useCommunity } from "@/context/CommunityContext";
+import { UserProfile, useAuth, BASE_EFE, BASE_OYKU } from "@/context/AuthContext";
+import { useCommunity, formatTimeAgo } from "@/context/CommunityContext";
 
 export default function PublicProfilePage() {
   const params = useParams();
@@ -41,109 +41,76 @@ export default function PublicProfilePage() {
       return;
     }
 
-    // 1. Check if it's the Admin user (@efe)
-    if (username === "efe" || username === "efecan" || username === "admin") {
-      let activeAdmin: UserProfile = {
-        id: "admin-master",
-        name: "Efe Taşkın",
-        username: "efe",
-        email: "efeabsteam@gmail.com",
-        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=1787085332805",
-        role: "admin",
-        badge: "Kurucu & Admin",
-        bio: "heycoderz kurucusu. Açık kaynak aşığı, Next.js, React ve Cloud mimarisi geliştiricisi.",
-        website: "https://heycoderz.com",
-        github: "https://github.com/heycoderz",
-        twitter: "https://twitter.com/heycoderz",
-        linkedin: "https://linkedin.com/company/heycoderz",
-        skills: ["Next.js", "React", "TypeScript", "Tailwind CSS", "Node.js", "Cloud Architecture"],
-        xp: 5420,
-        joinedAt: "Ocak 2026",
-      };
+    // 1. Initial quick load from local cache or current user
+    let initialUser: UserProfile | null = null;
 
+    if (username === "efe" || username === "efecan" || username === "admin") {
+      initialUser = BASE_EFE;
       try {
         const customSaved = localStorage.getItem("heycoderz_admin_profile_custom");
         if (customSaved) {
-          activeAdmin = { ...activeAdmin, ...JSON.parse(customSaved) };
+          initialUser = { ...initialUser, ...JSON.parse(customSaved) };
         }
         const activeUserStr = localStorage.getItem("heycoderz_active_user");
         if (activeUserStr) {
           const parsed = JSON.parse(activeUserStr);
           if (parsed.username === "efe" || parsed.email === "efeabsteam@gmail.com") {
-            activeAdmin = { ...activeAdmin, ...parsed };
+            initialUser = { ...initialUser, ...parsed };
           }
         }
-      } catch (e) {}
-
-      setProfile(activeAdmin);
-      setLoading(false);
-      return;
-    }
-
-    // 2. Check if it's Co-founder Öykü (@oyku)
-    if (username === "oyku" || username === "öykü") {
-      let activeOyku: UserProfile = {
-        id: "admin-oyku",
-        name: "Öykü",
-        username: "oyku",
-        email: "oyku@heycoderz.com",
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
-        role: "admin",
-        badge: "Kurucu Ortak & Admin",
-        bio: "heycoderz kurucu ortağı. UI/UX mimarisi, modern tasarım sistemleri ve Frontend geliştiricisi.",
-        website: "https://heycoderz.com",
-        github: "https://github.com/heycoderz",
-        twitter: "https://twitter.com/heycoderz",
-        linkedin: "https://linkedin.com/company/heycoderz",
-        skills: ["UI/UX Design", "Design Systems", "React", "Next.js", "Tailwind CSS", "Figma"],
-        xp: 5420,
-        joinedAt: "Ocak 2026",
-      };
-
+      } catch {}
+    } else if (username === "oyku" || username === "öykü") {
+      initialUser = BASE_OYKU;
       try {
         const customSaved = localStorage.getItem("heycoderz_oyku_profile_custom");
         if (customSaved) {
-          activeOyku = { ...activeOyku, ...JSON.parse(customSaved) };
+          initialUser = { ...initialUser, ...JSON.parse(customSaved) };
         }
         const activeUserStr = localStorage.getItem("heycoderz_active_user");
         if (activeUserStr) {
           const parsed = JSON.parse(activeUserStr);
           if (parsed.username === "oyku" || parsed.email === "oyku@heycoderz.com") {
-            activeOyku = { ...activeOyku, ...parsed };
+            initialUser = { ...initialUser, ...parsed };
           }
         }
-      } catch (e) {}
-
-      setProfile(activeOyku);
-      setLoading(false);
-      return;
-    }
-
-    // 3. Check registered users
-    const registeredUsersStr = localStorage.getItem("heycoderz_registered_users");
-    if (registeredUsersStr) {
+      } catch {}
+    } else if (currentUser && currentUser.username.toLowerCase() === username) {
+      initialUser = currentUser;
+    } else {
       try {
-        const registeredUsers = JSON.parse(registeredUsersStr);
-        const found = registeredUsers.find(
-          (u: any) => u.username.toLowerCase() === username
-        );
-        if (found) {
-          setProfile(found);
-          setLoading(false);
-          return;
+        const registeredUsersStr = localStorage.getItem("heycoderz_registered_users");
+        if (registeredUsersStr) {
+          const registeredUsers = JSON.parse(registeredUsersStr);
+          const found = registeredUsers.find((u: any) => u.username.toLowerCase() === username);
+          if (found) initialUser = found;
         }
-      } catch (e) {}
+      } catch {}
     }
 
-    // 4. If currently logged in user matches
-    if (currentUser && currentUser.username.toLowerCase() === username) {
-      setProfile(currentUser);
-      setLoading(false);
-      return;
+    if (initialUser) {
+      setProfile(initialUser);
     }
 
-    setProfile(null);
-    setLoading(false);
+    // 2. Fetch fresh profile directly from cloud database API
+    fetch("/api/sync")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.users)) {
+          const cloudUser = data.users.find(
+            (u: any) =>
+              u.username.toLowerCase() === username ||
+              (username === "efe" && (u.username === "efe" || u.email === "efeabsteam@gmail.com")) ||
+              (username === "oyku" && (u.username === "oyku" || u.email === "oyku@heycoderz.com"))
+          );
+          if (cloudUser) {
+            setProfile((prev) => ({ ...(prev || BASE_EFE), ...cloudUser }));
+          }
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        setLoading(false);
+      });
   }, [username, currentUser]);
 
   const handleShare = () => {
@@ -159,56 +126,17 @@ export default function PublicProfilePage() {
     (p) => p.authorUsername.toLowerCase() === username || (profile && p.authorId === profile.id)
   );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#030303] text-white flex items-center justify-center font-sans">
-        <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <div className="relative min-h-screen bg-[#030303] text-gray-100 flex flex-col font-sans selection:bg-purple-500/30 selection:text-white">
-        <BackgroundEffects />
-        <Navbar />
-        <main className="relative z-10 flex-1 flex items-center justify-center px-4 py-16">
-          <div className="text-center max-w-md p-8 rounded-3xl bg-[#09090F]/90 border border-white/10 space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto text-gray-500">
-              <User className="w-8 h-8" />
-            </div>
-            <h1 className="text-2xl font-bold text-white">Geliştirici Bulunamadı</h1>
-            <p className="text-xs text-gray-400">
-              <span className="font-mono text-purple-300">@{username}</span> adına sahip bir heycoderz profili mevcut değil.
-            </p>
-            <div className="pt-2">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Anasayfaya Dön</span>
-              </Link>
-            </div>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
   return (
-    <div className="relative min-h-screen bg-[#030303] text-gray-100 flex flex-col font-sans selection:bg-purple-500/30 selection:text-white">
+    <main className="min-h-screen bg-[#030303] text-white flex flex-col justify-between selection:bg-purple-500/30">
       <BackgroundEffects />
       <Navbar />
 
-      <main className="relative z-10 flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 w-full">
-        
-        {/* Top Back & Share Navigation */}
-        <div className="flex items-center justify-between gap-4 mb-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
+        {/* Back Link */}
+        <div className="mb-6 flex items-center justify-between">
           <Link
             href="/topluluk"
-            className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 text-xs font-medium text-gray-400 hover:text-white transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Topluluğa Dön</span>
@@ -217,150 +145,172 @@ export default function PublicProfilePage() {
           <button
             type="button"
             onClick={handleShare}
-            className="px-3.5 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-medium text-gray-300 flex items-center gap-1.5 transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-gray-300 hover:text-white transition-all cursor-pointer"
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-            <span>{copied ? "Link Kopyalandı!" : "Profili Paylaş"}</span>
+            <span>{copied ? "Kopyalandı!" : "Profili Paylaş"}</span>
           </button>
         </div>
 
-        {/* Profile Card Header */}
-        <div className="p-6 sm:p-10 rounded-3xl bg-[#09090F]/95 border border-purple-500/30 shadow-[0_20px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(139,92,246,0.18)] mb-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 sm:gap-8">
-            <div className="relative">
-              <img
-                src={profile.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"}
-                alt={profile.name}
-                className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-2 border-purple-500 shadow-[0_0_25px_rgba(139,92,246,0.35)] bg-black/80"
-              />
-              <span className="absolute -bottom-2 -right-2 px-2.5 py-0.5 rounded-lg bg-purple-600 text-[10px] font-bold text-white shadow-lg">
-                {profile.role === "admin" ? "ADMIN" : "GELİŞTİRİCİ"}
-              </span>
-            </div>
-
-            <div className="space-y-2 flex-1">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                  {profile.name}
-                </h1>
-                <span className="px-3 py-1 rounded-full bg-purple-950/60 border border-purple-500/40 text-purple-300 text-xs font-mono font-medium flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  {profile.role === "admin" ? "Kurucu & Admin" : "Geliştirici"}
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 text-sm text-purple-400 font-mono font-semibold">
-                <span>@{profile.username}</span>
-              </div>
-
-              {profile.bio && (
-                <p className="text-xs sm:text-sm text-gray-300 leading-relaxed pt-1 max-w-2xl">
-                  {profile.bio}
-                </p>
-              )}
-
-              {/* Social Links & Badges */}
-              <div className="flex flex-wrap items-center gap-4 pt-2 text-xs">
-                <span className="flex items-center gap-1 text-purple-300 font-mono">
-                  <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                  {profile.role === "admin" ? "Kurucu" : `${profile.xp || 100} XP`}
-                </span>
-
-                {profile.website && (
-                  <a
-                    href={profile.website}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1 text-gray-400 hover:text-purple-300 transition-colors"
-                  >
-                    <Globe className="w-3.5 h-3.5" />
-                    <span>{profile.website.replace(/^https?:\/\//, "")}</span>
-                  </a>
-                )}
-
-                {profile.github && (
-                  <a
-                    href={profile.github}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
-                  >
-                    <span>GitHub</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-
-                {profile.instagram && (
-                  <a
-                    href={profile.instagram}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1 text-pink-400/90 hover:text-pink-300 transition-colors"
-                  >
-                    <span>Instagram</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
-            </div>
+        {loading ? (
+          <div className="p-12 text-center rounded-3xl bg-[#09090F]/60 border border-white/10">
+            <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-xs text-gray-400">Profil yükleniyor...</p>
           </div>
-        </div>
+        ) : !profile ? (
+          <div className="p-12 text-center rounded-3xl bg-[#09090F]/60 border border-white/10 space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-purple-950/40 border border-purple-500/30 flex items-center justify-center mx-auto text-purple-400">
+              <User className="w-8 h-8" />
+            </div>
+            <h2 className="text-xl font-bold">Kullanıcı Bulunamadı</h2>
+            <p className="text-xs text-gray-400 max-w-sm mx-auto">
+              @{username} adında bir heycoderz geliştiricisi henüz mevcut değil veya kullanıcı adı değişti.
+            </p>
+            <Link
+              href="/"
+              className="inline-block px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-medium text-white transition-all"
+            >
+              Anasayfaya Dön
+            </Link>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Profile Main Card */}
+            <div className="relative p-6 sm:p-8 rounded-3xl bg-[#09090F]/90 border border-purple-500/30 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(139,92,246,0.15)] overflow-hidden">
+              <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-purple-600/10 via-indigo-600/5 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-        {/* Skills Section */}
-        {profile.skills && profile.skills.length > 0 && (
-          <div className="p-6 rounded-3xl bg-[#08080E]/90 border border-white/[0.08] mb-8 space-y-3">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2 font-mono">
-              <Sparkles className="w-4 h-4 text-purple-400" />
-              <span>Uzmanlık Becerileri & Teknolojiler</span>
-            </h3>
-            <div className="flex flex-wrap gap-2 pt-1">
-              {profile.skills.map((skill, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 rounded-xl bg-purple-950/40 border border-purple-500/30 text-xs font-mono text-purple-200"
-                >
-                  {skill}
-                </span>
-              ))}
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10 text-center sm:text-left">
+                {/* Avatar with Badges */}
+                <div className="relative shrink-0">
+                  <img
+                    src={profile.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${profile.username}`}
+                    alt={profile.name}
+                    className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-2 border-purple-500/50 shadow-2xl shadow-purple-950/80"
+                  />
+                  {profile.role === "admin" && (
+                    <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md bg-purple-600 text-[10px] font-black tracking-wider uppercase text-white shadow-lg border border-purple-400">
+                      ADMIN
+                    </span>
+                  )}
+                </div>
+
+                {/* Profile Details */}
+                <div className="space-y-2 flex-1">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2.5">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                      {profile.name}
+                    </h1>
+                    {profile.badge && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-purple-950/60 border border-purple-500/40 text-purple-300 text-xs font-semibold">
+                        <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+                        <span>{profile.badge}</span>
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs font-mono text-purple-400">@{profile.username}</p>
+
+                  {profile.bio && (
+                    <p className="text-xs sm:text-sm text-gray-300 max-w-xl leading-relaxed pt-1">
+                      {profile.bio}
+                    </p>
+                  )}
+
+                  {/* Meta Stats & Links */}
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 pt-3 text-xs text-gray-400">
+                    <div className="flex items-center gap-1.5 text-amber-400 font-medium">
+                      <Trophy className="w-4 h-4" />
+                      <span>{profile.role === "admin" ? "Kurucu" : `${profile.xp || 100} XP`}</span>
+                    </div>
+
+                    {profile.website && (
+                      <a
+                        href={profile.website}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 hover:text-purple-300 transition-colors"
+                      >
+                        <Globe className="w-3.5 h-3.5" />
+                        <span>{profile.website.replace(/^https?:\/\//, "")}</span>
+                      </a>
+                    )}
+
+                    {profile.github && (
+                      <a
+                        href={profile.github.startsWith("http") ? profile.github : `https://github.com/${profile.github}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 hover:text-purple-300 transition-colors"
+                      >
+                        <Code2 className="w-3.5 h-3.5" />
+                        <span>GitHub</span>
+                        <ExternalLink className="w-3 h-3 text-gray-500" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Skills & Technologies */}
+            {profile.skills && profile.skills.length > 0 && (
+              <div className="p-6 rounded-2xl bg-[#09090F]/80 border border-white/10 backdrop-blur-xl space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-2 font-mono">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Uzmanlık Becerileri & Teknolojiler</span>
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {profile.skills.map((skill, idx) => (
+                    <span
+                      key={idx}
+                      className="px-3 py-1.5 rounded-xl bg-purple-950/40 border border-purple-500/20 text-purple-200 text-xs font-medium"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Community Activity Section */}
+            <div className="p-6 rounded-2xl bg-[#09090F]/80 border border-white/10 backdrop-blur-xl space-y-4">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-2 font-mono">
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Topluluk Paylaşımları ({userPosts.length})</span>
+              </h3>
+
+              {userPosts.length === 0 ? (
+                <p className="text-xs text-gray-500 py-4 text-center">
+                  Henüz toplulukta bir gönderi paylaşılmamış.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {userPosts.map((post) => (
+                    <div
+                      key={post.id}
+                      className="p-4 rounded-xl bg-white/[0.02] border border-white/10 hover:border-purple-500/30 transition-all space-y-2"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-sm font-bold text-white">{post.title}</h4>
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-purple-950/60 border border-purple-500/30 text-purple-300">
+                          {post.tag}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 line-clamp-2">{post.body}</p>
+                      <div className="flex items-center justify-between text-[11px] text-gray-500 pt-1">
+                        <span>{formatTimeAgo(post.createdAt)}</span>
+                        <span>{post.likes} Beğeni • {post.comments?.length || 0} Yorum</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
-
-        {/* Community Contributions by User */}
-        <div className="p-6 rounded-3xl bg-[#08080E]/90 border border-white/[0.08] space-y-4">
-          <h3 className="text-sm font-bold text-white flex items-center gap-2">
-            <MessageSquare className="w-4 h-4 text-purple-400" />
-            <span>Topluluk Paylaşımları ({userPosts.length})</span>
-          </h3>
-
-          {userPosts.length === 0 ? (
-            <p className="text-xs text-gray-500 font-mono py-4 text-center">
-              Bu geliştirici henüz bir tartışma başlatmadı.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {userPosts.map((post) => (
-                <Link
-                  key={post.id}
-                  href="/topluluk"
-                  className="block p-4 rounded-2xl bg-black/50 border border-white/[0.05] hover:border-purple-500/30 transition-all"
-                >
-                  <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="font-bold text-white">{post.title}</span>
-                    <span className="text-[10px] font-mono text-purple-400 px-2 py-0.5 rounded bg-purple-950/60 border border-purple-500/20">
-                      {post.tag}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-400 line-clamp-2">{post.body}</p>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-
-      </main>
+      </div>
 
       <Footer />
-    </div>
+    </main>
   );
 }
