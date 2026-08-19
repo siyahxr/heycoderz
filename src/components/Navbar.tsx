@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, ArrowRight, LogOut, LayoutDashboard, ShieldCheck, Globe } from "lucide-react";
+import { Menu, X, ArrowRight, LogOut, LayoutDashboard, ShieldCheck, Globe, Settings } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 interface NavItem {
@@ -114,6 +114,15 @@ export const Navbar: React.FC = () => {
                     <span>Kamuya Açık Profil</span>
                   </Link>
 
+                  <Link
+                    href="/ayarlar"
+                    onClick={() => setUserDropdownOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-gray-300 hover:text-white hover:bg-purple-950/40 transition-colors"
+                  >
+                    <Settings className="w-4 h-4 text-purple-400" />
+                    <span>Ayarlar & Güvenlik</span>
+                  </Link>
+
                   <button
                     type="button"
                     onClick={() => {
@@ -192,6 +201,14 @@ export const Navbar: React.FC = () => {
                 >
                   <LayoutDashboard className="w-4 h-4" />
                   <span>Dashboard&apos;a Git</span>
+                </Link>
+                <Link
+                  href="/ayarlar"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-2.5 text-xs font-medium text-gray-300 hover:text-white bg-white/[0.04] border border-white/10 rounded-xl flex items-center justify-center gap-2"
+                >
+                  <Settings className="w-4 h-4 text-purple-400" />
+                  <span>Ayarlar & Güvenlik</span>
                 </Link>
                 <button
                   type="button"

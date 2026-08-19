@@ -19,20 +19,23 @@ export default function RegisterPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
     setLoading(true);
 
-    setTimeout(() => {
-      const res = register(name, username, email, password);
+    try {
+      const res = await register(name, username, email, password);
       setLoading(false);
       if (res.success) {
         router.push("/dashboard");
       } else {
         setErrorMsg(res.message || "Kayıt işlemi başarısız.");
       }
-    }, 400);
+    } catch {
+      setLoading(false);
+      setErrorMsg("Kayıt olunurken bir hata oluştu.");
+    }
   };
 
   return (

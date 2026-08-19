@@ -82,7 +82,7 @@ const INITIAL_POSTS: CommunityPost[] = [
     authorAvatar: "https://api.dicebear.com/7.x/bottts/svg?seed=1787085332805",
     authorBadge: "Kurucu & Baş Geliştirici",
     authorRole: "admin",
-    title: "Hey Coder'z",
+    title: "Hey Coder'z Platformu Yayında! 🚀",
     body: "Buralarda büyük ihtimalle yenisin. Umarım burası senin için hem eğlenceli hem de öğretici bir yer olur. Tekrar hoş geldin!",
     codeSnippet: `// heycoderz geliştirici manifestosu
 const platform = {
@@ -95,7 +95,7 @@ const platform = {
     likes: 1,
     likedByUserIds: ["admin-master"],
     comments: [],
-    createdAt: Date.now() - 3600000 * 4, // 4 saat önce
+    createdAt: Date.now() - 3600000 * 4,
     timestamp: Date.now() - 3600000 * 4,
   },
 ];
@@ -120,7 +120,7 @@ const CommunityContext = createContext<CommunityContextType | undefined>(undefin
 export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [posts, setPosts] = useState<CommunityPost[]>(INITIAL_POSTS);
 
-  // Sync with localStorage & BroadcastChannel for real-time multi-tab propagation
+  // Sync with server API, localStorage & BroadcastChannel
   useEffect(() => {
     const saved = localStorage.getItem("heycoderz_community_posts_v2");
     if (saved) {
@@ -129,9 +129,18 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       } catch (e) {
         console.error("Community data parse error:", e);
       }
-    } else {
-      localStorage.setItem("heycoderz_community_posts_v2", JSON.stringify(INITIAL_POSTS));
     }
+
+    // Fetch latest from API
+    fetch("/api/posts")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.posts) && data.posts.length > 0) {
+          setPosts(data.posts);
+          localStorage.setItem("heycoderz_community_posts_v2", JSON.stringify(data.posts));
+        }
+      })
+      .catch(() => {});
 
     let channel: BroadcastChannel | null = null;
     if (typeof window !== "undefined" && "BroadcastChannel" in window) {
@@ -152,7 +161,7 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setPosts(updatedPosts);
     try {
       localStorage.setItem("heycoderz_community_posts_v2", JSON.stringify(updatedPosts));
-    } catch (e) {}
+    } catch {}
 
     if (typeof window !== "undefined" && "BroadcastChannel" in window) {
       const channel = new BroadcastChannel("heycoderz_community_channel_v2");
@@ -190,6 +199,13 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
     const updated = [newPost, ...posts];
     broadcastPosts(updated);
+
+    // Sync to server API
+    fetch("/api/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "create", post: newPost }),
+    }).catch(() => {});
   };
 
   const addComment = (postId: string, body: string, user?: UserProfile | null) => {
@@ -217,6 +233,13 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
 
     broadcastPosts(updated);
+
+    // Sync to server API
+    fetch("/api/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "comment", postId, comment: newComment }),
+    }).catch(() => {});
   };
 
   const toggleLike = (postId: string, userId?: string) => {
@@ -239,11 +262,25 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
 
     broadcastPosts(updated);
+
+    // Sync to server API
+    fetch("/api/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "like", postId, userId: currentUserId }),
+    }).catch(() => {});
   };
 
   const deletePost = (postId: string) => {
     const updated = posts.filter((p) => p.id !== postId);
     broadcastPosts(updated);
+
+    // Sync to server API
+    fetch("/api/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", postId }),
+    }).catch(() => {});
   };
 
   const clearAllDemoPosts = () => {

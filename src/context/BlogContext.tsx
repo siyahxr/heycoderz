@@ -161,6 +161,17 @@ export const BlogProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } catch (e) { }
     }
+
+    // Fetch latest articles from server API
+    fetch("/api/articles")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.articles) && data.articles.length > 0) {
+          setArticles(data.articles);
+          localStorage.setItem("heycoderz_blog_articles", JSON.stringify(data.articles));
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const saveArticlesToStorage = (list: BlogArticle[]) => {
@@ -184,16 +195,37 @@ export const BlogProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const updated = [newArticle, ...articles];
     saveArticlesToStorage(updated);
+
+    // Sync to API
+    fetch("/api/articles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "create", article: newArticle }),
+    }).catch(() => {});
   };
 
   const updateArticle = (id: string, updatedFields: Partial<BlogArticle>) => {
     const updated = articles.map((art) => (art.id === id ? { ...art, ...updatedFields } : art));
     saveArticlesToStorage(updated);
+
+    // Sync to API
+    fetch("/api/articles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "update", articleId: id, updatedFields }),
+    }).catch(() => {});
   };
 
   const deleteArticle = (id: string) => {
     const updated = articles.filter((art) => art.id !== id);
     saveArticlesToStorage(updated);
+
+    // Sync to API
+    fetch("/api/articles", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "delete", articleId: id }),
+    }).catch(() => {});
   };
 
   const getArticleById = (id: string) => {

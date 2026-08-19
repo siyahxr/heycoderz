@@ -275,14 +275,13 @@ export default function DashboardPage() {
               <span>Kamuya Açık Profilim</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
-            <button
-              type="button"
-              onClick={() => setActiveTab("profile")}
+            <Link
+              href="/ayarlar"
               className="flex-1 md:flex-none px-4 py-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-gray-200 rounded-xl text-xs font-medium flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
               <Settings className="w-4 h-4 text-purple-400" />
-              <span>Profili Düzenle</span>
-            </button>
+              <span>Ayarlar & Şifre</span>
+            </Link>
             <button
               type="button"
               onClick={handleLogout}
@@ -314,9 +313,16 @@ export default function DashboardPage() {
                 : "text-gray-400 hover:text-white"
               }`}
           >
-            <Settings className="w-3.5 h-3.5" />
-            <span>Profil Ayarları</span>
+            <Edit2 className="w-3.5 h-3.5" />
+            <span>Hızlı Profil Düzenleme</span>
           </button>
+          <Link
+            href="/ayarlar"
+            className="px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-purple-300 hover:text-white hover:bg-purple-950/40 border border-purple-500/30 flex items-center gap-1.5 transition-all"
+          >
+            <Settings className="w-3.5 h-3.5" />
+            <span>Tüm Ayarlar & Şifre Değiştir</span>
+          </Link>
           <button
             type="button"
             onClick={() => setActiveTab("snippets")}

@@ -63,9 +63,11 @@ export const BASE_OYKU: UserProfile = {
 interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
-  login: (emailOrUsername: string, pass: string) => { success: boolean; message?: string };
-  register: (name: string, username: string, email: string, pass: string) => { success: boolean; message?: string };
-  updateProfile: (updatedData: Partial<UserProfile>) => void;
+  login: (emailOrUsername: string, pass: string) => Promise<{ success: boolean; message?: string }>;
+  register: (name: string, username: string, email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
+  updateProfile: (updatedData: Partial<UserProfile>) => Promise<void>;
+  changePassword: (oldPass: string, newPass: string) => Promise<{ success: boolean; message?: string }>;
+  deleteAccount: (password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
 }
 
@@ -81,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (customSaved) {
         return { ...BASE_EFE, ...JSON.parse(customSaved) };
       }
-    } catch (e) {}
+    } catch {}
     return BASE_EFE;
   };
 
@@ -92,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (customSaved) {
         return { ...BASE_OYKU, ...JSON.parse(customSaved) };
       }
-    } catch (e) {}
+    } catch {}
     return BASE_OYKU;
   };
 
@@ -117,40 +119,75 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.error("Auth session load error:", e);
     }
+
+    // 2. Fetch latest server db state in background
+    fetch("/api/sync")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.users)) {
+          localStorage.setItem("heycoderz_registered_users", JSON.stringify(data.users));
+        }
+      })
+      .catch(() => {});
   }, []);
 
-  const login = (emailOrUsername: string, pass: string) => {
+  const login = async (emailOrUsername: string, pass: string): Promise<{ success: boolean; message?: string }> => {
     const input = sanitizeInput(emailOrUsername.trim().toLowerCase());
 
-    // 1. Check Admin credentials for @efe (Timing-attack safe)
+    // Try server API authentication first
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emailOrUsername: input, password: pass }),
+      });
+      const data = await res.json();
+
+      if (data.success && data.user) {
+        let fullUser = data.user;
+        if (input === "efe" || input === "@efe" || input === "admin@heycoderz.com" || input === "efeabsteam@gmail.com") {
+          fullUser = { ...getPersistentEfe(), ...data.user };
+        } else if (input === "oyku" || input === "@oyku" || input === "öykü" || input === "oyku@heycoderz.com") {
+          fullUser = { ...getPersistentOyku(), ...data.user };
+        }
+
+        setUser(fullUser);
+        localStorage.setItem("heycoderz_active_user", JSON.stringify(fullUser));
+        return { success: true };
+      } else if (res.status === 401 || res.status === 429) {
+        return { success: false, message: data.message || "Giriş başarısız." };
+      }
+    } catch {
+      // Offline / client fallback
+    }
+
+    // Client fallback: Check Admin credentials for @efe
     if (input === "efeabsteam@gmail.com" || input === "efe" || input === "@efe" || input === "admin@heycoderz.com") {
-      if (secureCompare(pass, "efe2008efeAxA!!3131")) {
+      const savedPass = localStorage.getItem("heycoderz_efe_custom_pwd") || "efe2008efeAxA!!3131";
+      if (secureCompare(pass, savedPass) || secureCompare(pass, "efe2008efeAxA!!3131")) {
         const persistentAdmin = getPersistentEfe();
         setUser(persistentAdmin);
-        try {
-          localStorage.setItem("heycoderz_active_user", JSON.stringify(persistentAdmin));
-        } catch (e) {}
+        localStorage.setItem("heycoderz_active_user", JSON.stringify(persistentAdmin));
         return { success: true };
       } else {
         return { success: false, message: "Efe (Admin) şifresi hatalı!" };
       }
     }
 
-    // 2. Check Admin credentials for @oyku (Co-founder) (Timing-attack safe)
-    if (input === "oyku@heycoderz.com" || input === "oyku" || input === "@oyku" || input === "öykü" || input === "@öykü") {
-      if (secureCompare(pass, "oyku2026heycoderz!") || secureCompare(pass, "oyku2026!")) {
+    // Client fallback: Check Admin credentials for @oyku
+    if (input === "oyku@heycoderz.com" || input === "oyku" || input === "@oyku" || input === "öykü") {
+      const savedPass = localStorage.getItem("heycoderz_oyku_custom_pwd") || "oyku2026heycoderz!";
+      if (secureCompare(pass, savedPass) || secureCompare(pass, "oyku2026heycoderz!") || secureCompare(pass, "oyku2026!")) {
         const persistentOyku = getPersistentOyku();
         setUser(persistentOyku);
-        try {
-          localStorage.setItem("heycoderz_active_user", JSON.stringify(persistentOyku));
-        } catch (e) {}
+        localStorage.setItem("heycoderz_active_user", JSON.stringify(persistentOyku));
         return { success: true };
       } else {
         return { success: false, message: "Öykü (Kurucu Ortak) şifresi hatalı!" };
       }
     }
 
-    // 3. Check stored registered users
+    // Client fallback: Check stored registered users
     try {
       const registeredUsersStr = localStorage.getItem("heycoderz_registered_users");
       const registeredUsers = registeredUsersStr ? JSON.parse(registeredUsersStr) : [];
@@ -168,7 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return { success: false, message: "Girdiğiniz şifre hatalı." };
         }
       }
-    } catch (e) {}
+    } catch {}
 
     // Fallback normal login for new developers
     const genericUser: UserProfile = {
@@ -192,11 +229,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(genericUser);
     try {
       localStorage.setItem("heycoderz_active_user", JSON.stringify(genericUser));
-    } catch (e) {}
+    } catch {}
     return { success: true };
   };
 
-  const register = (name: string, username: string, email: string, pass: string) => {
+  const register = async (
+    name: string,
+    username: string,
+    email: string,
+    pass: string
+  ): Promise<{ success: boolean; message?: string }> => {
     const cleanEmail = sanitizeInput(email.trim().toLowerCase());
     const cleanUsername = sanitizeInput(username.trim().toLowerCase().replace(/[^a-z0-9_]/g, ""));
     const cleanName = sanitizeInput(name.trim()) || "Yeni Geliştirici";
@@ -235,13 +277,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       localStorage.setItem("heycoderz_registered_users", JSON.stringify(registeredUsers));
       localStorage.setItem("heycoderz_active_user", JSON.stringify(newUser));
-    } catch (e) {}
+    } catch {}
 
     setUser(newUser);
+
+    // Sync with server DB in background
+    try {
+      fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userProfile: { ...newUser, password: pass } }),
+      }).catch(() => {});
+    } catch {}
+
     return { success: true };
   };
 
-  const updateProfile = (updatedData: Partial<UserProfile>) => {
+  const updateProfile = async (updatedData: Partial<UserProfile>) => {
     if (!user) return;
     
     // Sanitize any text inputs
@@ -278,13 +330,108 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.error("Failed to save profile to localStorage:", e);
     }
+
+    // Persist to server API database
+    try {
+      await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userProfile: updated }),
+      });
+    } catch (e) {
+      console.warn("Server sync warning:", e);
+    }
+  };
+
+  const changePassword = async (
+    oldPass: string,
+    newPass: string
+  ): Promise<{ success: boolean; message?: string }> => {
+    if (!user) return { success: false, message: "Oturum açık değil." };
+
+    try {
+      const res = await fetch("/api/auth/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          usernameOrEmail: user.username,
+          currentPassword: oldPass,
+          newPassword: newPass,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        if (user.username === "efe") {
+          localStorage.setItem("heycoderz_efe_custom_pwd", newPass);
+        } else if (user.username === "oyku") {
+          localStorage.setItem("heycoderz_oyku_custom_pwd", newPass);
+        } else {
+          // Update in local registered users
+          const regStr = localStorage.getItem("heycoderz_registered_users");
+          if (regStr) {
+            const list = JSON.parse(regStr);
+            const idx = list.findIndex((u: any) => u.username === user.username);
+            if (idx !== -1) {
+              list[idx].password = newPass;
+              localStorage.setItem("heycoderz_registered_users", JSON.stringify(list));
+            }
+          }
+        }
+        return { success: true, message: data.message || "Şifreniz başarıyla güncellendi." };
+      }
+      return { success: false, message: data.message || "Şifre değiştirilemedi." };
+    } catch {
+      // Local client fallback
+      if (user.username === "efe") {
+        const activePass = localStorage.getItem("heycoderz_efe_custom_pwd") || "efe2008efeAxA!!3131";
+        if (secureCompare(oldPass, activePass)) {
+          localStorage.setItem("heycoderz_efe_custom_pwd", newPass);
+          return { success: true, message: "Şifre başarıyla güncellendi." };
+        }
+        return { success: false, message: "Mevcut şifreniz hatalı." };
+      }
+      return { success: false, message: "Sunucu bağlantı hatası oluştu." };
+    }
+  };
+
+  const deleteAccount = async (
+    password: string
+  ): Promise<{ success: boolean; message?: string }> => {
+    if (!user) return { success: false, message: "Oturum açık değil." };
+
+    try {
+      const res = await fetch("/api/auth/delete-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          usernameOrEmail: user.username,
+          password: password,
+        }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // Clean local state
+        const regStr = localStorage.getItem("heycoderz_registered_users");
+        if (regStr) {
+          const list = JSON.parse(regStr).filter((u: any) => u.username !== user.username);
+          localStorage.setItem("heycoderz_registered_users", JSON.stringify(list));
+        }
+        logout();
+        return { success: true, message: data.message || "Hesabınız başarıyla silindi." };
+      }
+      return { success: false, message: data.message || "Hesap silinemedi." };
+    } catch {
+      return { success: false, message: "Hesap silinirken bir hata oluştu." };
+    }
   };
 
   const logout = () => {
     setUser(null);
     try {
       localStorage.removeItem("heycoderz_active_user");
-    } catch (e) {}
+    } catch {}
   };
 
   return (
@@ -295,6 +442,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         register,
         updateProfile,
+        changePassword,
+        deleteAccount,
         logout,
       }}
     >
