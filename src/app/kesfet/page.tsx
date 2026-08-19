@@ -61,9 +61,6 @@ export default function KesfetPage() {
   // Filter & Search Logic
   const filteredUsers = users
     .filter((u) => {
-      // Exclude any legacy efe references
-      if (u.username === "efe" || u.email === "efeabsteam@gmail.com") return false;
-
       // Filter tabs
       if (activeFilter === "admin") return u.role === "admin";
       if (activeFilter === "new") return u.joinedAt?.includes("Bugün") || u.joinedAt?.includes("Yeni") || u.id.startsWith("usr-");
@@ -88,8 +85,8 @@ export default function KesfetPage() {
       return 0;
     });
 
-  const totalMembers = users.filter((u) => u.username !== "efe").length;
-  const adminCount = users.filter((u) => u.role === "admin" && u.username !== "efe").length;
+  const totalMembers = users.length;
+  const adminCount = users.filter((u) => u.role === "admin").length;
 
   return (
     <main className="min-h-screen bg-[#030303] text-white flex flex-col justify-between selection:bg-purple-500/30">
