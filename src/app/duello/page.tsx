@@ -116,10 +116,11 @@ const DUEL_QUESTIONS: DuelQuestion[] = [
   },
 ];
 
-const BOT_OPPONENTS = [
-  { name: "Öykü (AI Bot)", rank: "Master", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80", winRate: "89%" },
-  { name: "Caner (Senior Bot)", rank: "Diamond", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80", winRate: "76%" },
-  { name: "Selin (Fast Coder)", rank: "Platinum", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80", winRate: "68%" },
+const OPPONENTS_LIST = [
+  { name: "Öykü", rank: "Master", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80", winRate: "89%" },
+  { name: "Caner Taşkın", rank: "Diamond", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80", winRate: "76%" },
+  { name: "Selin Yıldız", rank: "Platinum", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80", winRate: "68%" },
+  { name: "Barış Kaya", rank: "Grandmaster", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80", winRate: "92%" },
 ];
 
 export default function CodeDuelPage() {
@@ -128,7 +129,7 @@ export default function CodeDuelPage() {
   // State: "lobby" | "searching" | "battling" | "finished"
   const [gameState, setGameState] = useState<"lobby" | "searching" | "battling" | "finished">("lobby");
   const [currentQuestion, setCurrentQuestion] = useState<DuelQuestion>(DUEL_QUESTIONS[0]);
-  const [opponent, setOpponent] = useState(BOT_OPPONENTS[0]);
+  const [opponent, setOpponent] = useState(OPPONENTS_LIST[0]);
   const [userCode, setUserCode] = useState("");
   const [timeLeft, setTimeLeft] = useState(120);
 
@@ -143,7 +144,7 @@ export default function CodeDuelPage() {
   // Start matchmaking
   const startMatchmaking = (qIdx: number = 0) => {
     const selectedQ = DUEL_QUESTIONS[qIdx];
-    const randOpponent = BOT_OPPONENTS[Math.floor(Math.random() * BOT_OPPONENTS.length)];
+    const randOpponent = OPPONENTS_LIST[Math.floor(Math.random() * OPPONENTS_LIST.length)];
 
     setCurrentQuestion(selectedQ);
     setOpponent(randOpponent);
@@ -156,10 +157,10 @@ export default function CodeDuelPage() {
 
     setGameState("searching");
 
-    // Match found in 1.8s
+    // Match found in 1.4s
     setTimeout(() => {
       setGameState("battling");
-    }, 1800);
+    }, 1400);
   };
 
   // Timer & Opponent Progress loop during battling
@@ -180,7 +181,7 @@ export default function CodeDuelPage() {
         });
       }, 1000);
 
-      // Bot progress simulation
+      // Opponent progress simulation
       botInterval = setInterval(() => {
         setOpponentProgress((prev) => {
           const next = prev + Math.floor(Math.random() * 8) + 2;
@@ -213,6 +214,16 @@ export default function CodeDuelPage() {
     if (res.passed) {
       setWinner("user");
       setGameState("finished");
+
+      // Persist XP reward
+      try {
+        const active = localStorage.getItem("heycoderz_active_user");
+        if (active) {
+          const parsed = JSON.parse(active);
+          parsed.xp = (parsed.xp || 100) + 150;
+          localStorage.setItem("heycoderz_active_user", JSON.stringify(parsed));
+        }
+      } catch {}
     }
   };
 

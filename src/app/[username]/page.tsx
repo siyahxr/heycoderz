@@ -515,6 +515,13 @@ export default function PublicProfilePage() {
         isOpen={isDmOpen}
         onClose={() => setIsDmOpen(false)}
         targetUsername={profile?.username}
+        targetUser={profile ? {
+          id: profile.id,
+          name: profile.name,
+          username: profile.username,
+          avatar: profile.avatar,
+          role: profile.role === "admin" ? "Kurucu & Admin" : (profile.badge || "Geliştirici"),
+        } : undefined}
       />
 
       <Footer />
