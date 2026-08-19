@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDatabase, saveDatabase } from "@/lib/serverDb";
+import { fetchCloudDatabase, saveCloudDatabase } from "@/lib/serverDb";
 import { checkRateLimit, secureCompare, sanitizeInput } from "@/lib/security";
 
 export async function POST(req: NextRequest) {
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanInput = sanitizeInput(usernameOrEmail.trim().toLowerCase());
-    const db = getDatabase();
+    const db = await fetchCloudDatabase();
 
     // Prevent deleting master root account directly
     if (cleanInput === "efe" || cleanInput === "efeabsteam@gmail.com") {
@@ -63,10 +63,9 @@ export async function POST(req: NextRequest) {
 
     // Filter out user from database
     const newUsers = db.users.filter((_, idx) => idx !== userIndex);
-    // Also remove or clean up their posts if needed
     const newPosts = db.posts.filter((p) => p.authorId !== userToDelete.id && p.authorUsername !== userToDelete.username);
 
-    saveDatabase({ users: newUsers, posts: newPosts });
+    await saveCloudDatabase({ users: newUsers, posts: newPosts });
 
     return NextResponse.json({
       success: true,

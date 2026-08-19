@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDatabase, saveDatabase } from "@/lib/serverDb";
+import { fetchCloudDatabase, saveCloudDatabase } from "@/lib/serverDb";
 import { sanitizeInput } from "@/lib/security";
 import { CommunityPost } from "@/context/CommunityContext";
 
 export async function GET() {
   try {
-    const db = getDatabase();
+    const db = await fetchCloudDatabase();
     return NextResponse.json({
       success: true,
       posts: db.posts || [],
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action, post, postId, comment, userId } = body;
-    const db = getDatabase();
+    const db = await fetchCloudDatabase();
     let posts = [...(db.posts || [])];
 
     if (action === "create" && post) {
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
       posts = posts.filter((p) => p.id !== postId);
     }
 
-    const updatedDb = saveDatabase({ posts });
+    const updatedDb = await saveCloudDatabase({ posts });
 
     return NextResponse.json({
       success: true,

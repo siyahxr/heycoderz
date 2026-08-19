@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDatabase, saveDatabase } from "@/lib/serverDb";
+import { fetchCloudDatabase, saveCloudDatabase } from "@/lib/serverDb";
 import { checkRateLimit, secureCompare, sanitizeInput } from "@/lib/security";
 
 export async function POST(req: NextRequest) {
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanInput = sanitizeInput(usernameOrEmail.trim().toLowerCase());
-    const db = getDatabase();
+    const db = await fetchCloudDatabase();
     const adminPasswords = { ...db.adminPasswords };
     let users = [...db.users];
 
@@ -54,12 +54,11 @@ export async function POST(req: NextRequest) {
       }
 
       adminPasswords.efe = newPassword;
-      // Also update in users list if present
       users = users.map((u) =>
         u.username === "efe" ? { ...u, password: newPassword } : u
       );
 
-      saveDatabase({ adminPasswords, users });
+      await saveCloudDatabase({ adminPasswords, users });
       return NextResponse.json({
         success: true,
         message: "Efe (Admin) şifresi başarıyla güncellendi.",
@@ -89,7 +88,7 @@ export async function POST(req: NextRequest) {
         u.username === "oyku" ? { ...u, password: newPassword } : u
       );
 
-      saveDatabase({ adminPasswords, users });
+      await saveCloudDatabase({ adminPasswords, users });
       return NextResponse.json({
         success: true,
         message: "Öykü (Kurucu Ortak) şifresi başarıyla güncellendi.",
@@ -123,7 +122,7 @@ export async function POST(req: NextRequest) {
       password: newPassword,
     };
 
-    saveDatabase({ users });
+    await saveCloudDatabase({ users });
     return NextResponse.json({
       success: true,
       message: "Şifreniz başarıyla değiştirildi.",

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, secureCompare, sanitizeInput } from "@/lib/security";
-import { getDatabase } from "@/lib/serverDb";
+import { fetchCloudDatabase } from "@/lib/serverDb";
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
 
     const cleanInput = sanitizeInput(emailOrUsername.trim().toLowerCase());
     const pass = String(password);
-    const db = getDatabase();
+    const db = await fetchCloudDatabase();
     const activeEfePass = db.adminPasswords?.efe || "efe2008efeAxA!!3131";
     const activeOykuPass = db.adminPasswords?.oyku || "oyku2026heycoderz!";
 

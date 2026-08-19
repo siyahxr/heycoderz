@@ -71,7 +71,7 @@ const platform = {
   lastUpdated: Date.now(),
 };
 
-// In-memory fallback (for serverless environments where fs is read-only)
+// In-memory fallback
 let inMemoryDb: DatabaseSchema = { ...INITIAL_DATABASE };
 
 function ensureDataDir(): boolean {
@@ -83,6 +83,43 @@ function ensureDataDir(): boolean {
   } catch {
     return false;
   }
+}
+
+// Check Cloud KV / Upstash credentials
+function getCloudCredentials() {
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  return url && token ? { url, token } : null;
+}
+
+export async function fetchCloudDatabase(): Promise<DatabaseSchema> {
+  const creds = getCloudCredentials();
+  if (!creds) {
+    return getDatabase();
+  }
+
+  try {
+    const res = await fetch(`${creds.url}/get/heycoderz_database_v2`, {
+      headers: { Authorization: `Bearer ${creds.token}` },
+      cache: "no-store",
+    });
+    const data = await res.json();
+    if (data?.result) {
+      const parsed = typeof data.result === "string" ? JSON.parse(data.result) : data.result;
+      inMemoryDb = {
+        ...INITIAL_DATABASE,
+        ...parsed,
+        users: parsed.users && parsed.users.length > 0 ? parsed.users : INITIAL_DATABASE.users,
+        adminPasswords: parsed.adminPasswords || INITIAL_DATABASE.adminPasswords,
+        posts: parsed.posts || INITIAL_DATABASE.posts,
+      };
+      return inMemoryDb;
+    }
+  } catch (e) {
+    console.warn("Could not fetch from Upstash Cloud DB, falling back to local:", e);
+  }
+
+  return getDatabase();
 }
 
 export function getDatabase(): DatabaseSchema {
@@ -105,6 +142,42 @@ export function getDatabase(): DatabaseSchema {
   return inMemoryDb;
 }
 
+export async function saveCloudDatabase(data: Partial<DatabaseSchema>): Promise<DatabaseSchema> {
+  const current = await fetchCloudDatabase();
+  const updated: DatabaseSchema = {
+    ...current,
+    ...data,
+    lastUpdated: Date.now(),
+  };
+  inMemoryDb = updated;
+
+  // 1. Try persisting to Cloud Database (Upstash / KV)
+  const creds = getCloudCredentials();
+  if (creds) {
+    try {
+      await fetch(`${creds.url}/set/heycoderz_database_v2`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${creds.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updated),
+      });
+    } catch (e) {
+      console.warn("Could not persist to Upstash Cloud DB:", e);
+    }
+  }
+
+  // 2. Persist locally to file if possible
+  try {
+    if (ensureDataDir()) {
+      fs.writeFileSync(DB_FILE, JSON.stringify(updated, null, 2), "utf-8");
+    }
+  } catch {}
+
+  return updated;
+}
+
 export function saveDatabase(data: Partial<DatabaseSchema>): DatabaseSchema {
   const current = getDatabase();
   const updated: DatabaseSchema = {
@@ -114,13 +187,24 @@ export function saveDatabase(data: Partial<DatabaseSchema>): DatabaseSchema {
   };
   inMemoryDb = updated;
 
+  // Background cloud save if credentials exist
+  const creds = getCloudCredentials();
+  if (creds) {
+    fetch(`${creds.url}/set/heycoderz_database_v2`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${creds.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(updated),
+    }).catch(() => {});
+  }
+
   try {
     if (ensureDataDir()) {
       fs.writeFileSync(DB_FILE, JSON.stringify(updated, null, 2), "utf-8");
     }
-  } catch (err) {
-    console.warn("Could not write to DB file, data kept in memory:", err);
-  }
+  } catch {}
 
   return updated;
 }

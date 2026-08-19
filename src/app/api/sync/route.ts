@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDatabase, saveDatabase } from "@/lib/serverDb";
+import { fetchCloudDatabase, saveCloudDatabase } from "@/lib/serverDb";
 
 export async function GET() {
   try {
-    const db = getDatabase();
+    const db = await fetchCloudDatabase();
     // Return sanitized users (hide passwords)
     const sanitizedUsers = db.users.map(({ password, ...rest }) => rest);
     return NextResponse.json({
@@ -27,10 +27,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { posts, articles, jobs, userProfile } = body;
 
-    const db = getDatabase();
+    const db = await fetchCloudDatabase();
     let updatedUsers = [...db.users];
 
-    // If a user profile update is requested
+    // If a user profile update or new user is requested
     if (userProfile && userProfile.username) {
       const idx = updatedUsers.findIndex(
         (u) =>
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const newDb = saveDatabase({
+    const newDb = await saveCloudDatabase({
       ...(posts && Array.isArray(posts) ? { posts } : {}),
       ...(articles && Array.isArray(articles) ? { articles } : {}),
       ...(jobs && Array.isArray(jobs) ? { jobs } : {}),

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDatabase, saveDatabase } from "@/lib/serverDb";
+import { fetchCloudDatabase, saveCloudDatabase } from "@/lib/serverDb";
 import { BlogArticle } from "@/context/BlogContext";
 
 export async function GET() {
   try {
-    const db = getDatabase();
+    const db = await fetchCloudDatabase();
     return NextResponse.json({
       success: true,
       articles: db.articles || [],
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action, article, articleId, updatedFields } = body;
-    const db = getDatabase();
+    const db = await fetchCloudDatabase();
     let articles = [...(db.articles || [])];
 
     if (action === "create" && article) {
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
       articles = articles.filter((a) => a.id !== articleId);
     }
 
-    const updatedDb = saveDatabase({ articles });
+    const updatedDb = await saveCloudDatabase({ articles });
 
     return NextResponse.json({
       success: true,
