@@ -22,12 +22,14 @@ export interface UserProfile {
   joinedAt: string;
 }
 
+export const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/bottts/svg?seed=heycoderz";
+
 export const BASE_EFE: UserProfile = {
   id: "admin-master",
   name: "Efe Taşkın",
   username: "efe",
   email: "efeabsteam@gmail.com",
-  avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=1787085332805",
+  avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=heycoderz-dev",
   role: "admin",
   badge: "Kurucu & Admin",
   bio: "heycoderz kurucusu. Açık kaynak aşığı, Next.js, React ve Cloud mimarisi geliştiricisi.",
@@ -76,45 +78,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
 
-  // Helper to load persistent admin profile for Efe
-  const getPersistentEfe = (): UserProfile => {
-    try {
-      const customSaved = localStorage.getItem("heycoderz_admin_profile_custom");
-      if (customSaved) {
-        return { ...BASE_EFE, ...JSON.parse(customSaved) };
-      }
-    } catch {}
-    return BASE_EFE;
-  };
-
-  // Helper to load persistent admin profile for Öykü
-  const getPersistentOyku = (): UserProfile => {
-    try {
-      const customSaved = localStorage.getItem("heycoderz_oyku_profile_custom");
-      if (customSaved) {
-        return { ...BASE_OYKU, ...JSON.parse(customSaved) };
-      }
-    } catch {}
-    return BASE_OYKU;
-  };
-
   useEffect(() => {
     // 1. Load active user session on mount
     try {
       const savedUserStr = localStorage.getItem("heycoderz_active_user");
       if (savedUserStr) {
         const parsed = JSON.parse(savedUserStr);
-        if (parsed.username === "efe" || parsed.email === "efeabsteam@gmail.com") {
-          const finalAdmin = { ...getPersistentEfe(), ...parsed };
-          setUser(finalAdmin);
-          localStorage.setItem("heycoderz_active_user", JSON.stringify(finalAdmin));
-        } else if (parsed.username === "oyku" || parsed.email === "oyku@heycoderz.com") {
-          const finalOyku = { ...getPersistentOyku(), ...parsed };
-          setUser(finalOyku);
-          localStorage.setItem("heycoderz_active_user", JSON.stringify(finalOyku));
-        } else {
-          setUser(parsed);
-        }
+        setUser(parsed);
       }
     } catch (e) {
       console.error("Auth session load error:", e);
@@ -126,6 +96,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .then((data) => {
         if (data?.success && Array.isArray(data.users)) {
           localStorage.setItem("heycoderz_registered_users", JSON.stringify(data.users));
+          // If current user is in cloud database, update with fresh cloud data
+          const saved = localStorage.getItem("heycoderz_active_user");
+          if (saved) {
+            const current = JSON.parse(saved);
+            const foundInCloud = data.users.find(
+              (u: any) => u.username?.toLowerCase() === current.username?.toLowerCase() || u.id === current.id
+            );
+            if (foundInCloud) {
+              const merged = { ...current, ...foundInCloud };
+              setUser(merged);
+              localStorage.setItem("heycoderz_active_user", JSON.stringify(merged));
+            }
+          }
         }
       })
       .catch(() => {});
@@ -144,15 +127,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const data = await res.json();
 
       if (data.success && data.user) {
-        let fullUser = data.user;
-        if (input === "efe" || input === "@efe" || input === "admin@heycoderz.com" || input === "efeabsteam@gmail.com") {
-          fullUser = { ...getPersistentEfe(), ...data.user };
-        } else if (input === "oyku" || input === "@oyku" || input === "öykü" || input === "oyku@heycoderz.com") {
-          fullUser = { ...getPersistentOyku(), ...data.user };
-        }
-
-        setUser(fullUser);
-        localStorage.setItem("heycoderz_active_user", JSON.stringify(fullUser));
+        setUser(data.user);
+        localStorage.setItem("heycoderz_active_user", JSON.stringify(data.user));
         return { success: true };
       } else if (res.status === 401 || res.status === 429) {
         return { success: false, message: data.message || "Giriş başarısız." };
@@ -165,9 +141,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (input === "efeabsteam@gmail.com" || input === "efe" || input === "@efe" || input === "admin@heycoderz.com") {
       const savedPass = localStorage.getItem("heycoderz_efe_custom_pwd") || "efe2008efeAxA!!3131";
       if (secureCompare(pass, savedPass) || secureCompare(pass, "efe2008efeAxA!!3131")) {
-        const persistentAdmin = getPersistentEfe();
-        setUser(persistentAdmin);
-        localStorage.setItem("heycoderz_active_user", JSON.stringify(persistentAdmin));
+        const adminUser: UserProfile = {
+          ...BASE_EFE,
+          avatar: localStorage.getItem("heycoderz_admin_avatar") || BASE_EFE.avatar,
+        };
+        setUser(adminUser);
+        localStorage.setItem("heycoderz_active_user", JSON.stringify(adminUser));
         return { success: true };
       } else {
         return { success: false, message: "Efe (Admin) şifresi hatalı!" };
@@ -178,9 +157,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (input === "oyku@heycoderz.com" || input === "oyku" || input === "@oyku" || input === "öykü") {
       const savedPass = localStorage.getItem("heycoderz_oyku_custom_pwd") || "oyku2026heycoderz!";
       if (secureCompare(pass, savedPass) || secureCompare(pass, "oyku2026heycoderz!") || secureCompare(pass, "oyku2026!")) {
-        const persistentOyku = getPersistentOyku();
-        setUser(persistentOyku);
-        localStorage.setItem("heycoderz_active_user", JSON.stringify(persistentOyku));
+        const oykuUser: UserProfile = {
+          ...BASE_OYKU,
+          avatar: localStorage.getItem("heycoderz_oyku_avatar") || BASE_OYKU.avatar,
+        };
+        setUser(oykuUser);
+        localStorage.setItem("heycoderz_active_user", JSON.stringify(oykuUser));
         return { success: true };
       } else {
         return { success: false, message: "Öykü (Kurucu Ortak) şifresi hatalı!" };
@@ -247,8 +229,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const registeredUsers = registeredUsersStr ? JSON.parse(registeredUsersStr) : [];
 
     if (
-      cleanUsername === "efe" || 
-      cleanUsername === "oyku" ||
       registeredUsers.some((u: any) => u.email === cleanEmail || u.username === cleanUsername)
     ) {
       return { success: false, message: "Bu e-posta veya kullanıcı adı ile zaten bir hesap mevcut." };
@@ -283,11 +263,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Sync with server DB in background
     try {
-      fetch("/api/sync", {
+      await fetch("/api/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userProfile: { ...newUser, password: pass } }),
-      }).catch(() => {});
+      });
     } catch {}
 
     return { success: true };
@@ -308,13 +288,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       localStorage.setItem("heycoderz_active_user", JSON.stringify(updated));
 
-      // Persist Efe
-      if (updated.username === "efe" || updated.email === "efeabsteam@gmail.com") {
-        localStorage.setItem("heycoderz_admin_profile_custom", JSON.stringify(updated));
-      }
-      // Persist Öykü
-      if (updated.username === "oyku" || updated.email === "oyku@heycoderz.com") {
-        localStorage.setItem("heycoderz_oyku_profile_custom", JSON.stringify(updated));
+      if (updated.avatar) {
+        if (updated.username === "efe") localStorage.setItem("heycoderz_admin_avatar", updated.avatar);
+        if (updated.username === "oyku") localStorage.setItem("heycoderz_oyku_avatar", updated.avatar);
       }
 
       // Also update in registered list if exists
@@ -331,7 +307,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Failed to save profile to localStorage:", e);
     }
 
-    // Persist to server API database
+    // Persist directly to cloud database
     try {
       await fetch("/api/sync", {
         method: "POST",
@@ -367,7 +343,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else if (user.username === "oyku") {
           localStorage.setItem("heycoderz_oyku_custom_pwd", newPass);
         } else {
-          // Update in local registered users
           const regStr = localStorage.getItem("heycoderz_registered_users");
           if (regStr) {
             const list = JSON.parse(regStr);
@@ -382,15 +357,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       return { success: false, message: data.message || "Şifre değiştirilemedi." };
     } catch {
-      // Local client fallback
-      if (user.username === "efe") {
-        const activePass = localStorage.getItem("heycoderz_efe_custom_pwd") || "efe2008efeAxA!!3131";
-        if (secureCompare(oldPass, activePass)) {
-          localStorage.setItem("heycoderz_efe_custom_pwd", newPass);
-          return { success: true, message: "Şifre başarıyla güncellendi." };
-        }
-        return { success: false, message: "Mevcut şifreniz hatalı." };
-      }
       return { success: false, message: "Sunucu bağlantı hatası oluştu." };
     }
   };
