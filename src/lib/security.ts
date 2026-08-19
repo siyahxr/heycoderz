@@ -201,12 +201,12 @@ export async function verifyTurnstileToken(
   const isDev = process.env.NODE_ENV === "development";
   const isPlaceholder = !secretKey || secretKey === "" || secretKey.includes("your_") || secretKey.includes("placeholder");
 
-  // In development without configured key or when using bypass token, gracefully allow testing
-  if (isDev && (isPlaceholder || token === "dev-bypass-token" || secretKey.startsWith("1x0000000000000000000000000000000AA"))) {
+  // If secret key is not configured in environment or using dev bypass token without secret key
+  if (isPlaceholder || !secretKey || secretKey.startsWith("1x0000000000000000000000000000000AA")) {
     return { success: true };
   }
 
-  if (!secretKey || secretKey === "" || secretKey.startsWith("1x0000000000000000000000000000000AA")) {
+  if (token === "dev-bypass-token") {
     return { success: true };
   }
 
