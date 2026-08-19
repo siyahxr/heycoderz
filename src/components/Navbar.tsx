@@ -17,6 +17,7 @@ const mainNavItems: NavItem[] = [
   { id: "playground", label: "Playground", href: "/playground" },
   { id: "kaynaklar", label: "Kaynaklar", href: "/kaynaklar" },
   { id: "topluluk", label: "Topluluk", href: "/topluluk" },
+  { id: "kesfet", label: "Keşfet", href: "/kesfet" },
   { id: "blog", label: "Blog", href: "/blog" },
   { id: "hakkimizda", label: "Hakkımızda", href: "/hakkimizda" },
 ];
