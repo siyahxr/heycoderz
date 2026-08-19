@@ -1,0 +1,130 @@
+import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, secureCompare, sanitizeInput } from "@/lib/security";
+
+const EFE_PASSWORD = "efe2008efeAxA!!3131";
+const OYKU_PASSWORD = "oyku2026heycoderz!";
+
+export async function POST(req: NextRequest) {
+  try {
+    const ip = req.headers.get("x-forwarded-for") || "local-ip";
+    
+    // 1. Rate Limiting Protection (Max 5 attempts / minute)
+    const rateLimit = checkRateLimit(`login_${ip}`, 5, 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: `Çok fazla hatalı deneme yapıldı. Lütfen ${rateLimit.retryAfterSec} saniye sonra tekrar deneyin.` 
+        },
+        { status: 429 }
+      );
+    }
+
+    const body = await req.json();
+    const { emailOrUsername, password } = body;
+
+    if (!emailOrUsername || !password) {
+      return NextResponse.json(
+        { success: false, message: "Kullanıcı adı/e-posta ve şifre zorunludur." },
+        { status: 400 }
+      );
+    }
+
+    const cleanInput = sanitizeInput(emailOrUsername.trim().toLowerCase());
+    const pass = String(password);
+
+    // 2. Check Admin: Efe (Timing-safe comparison)
+    if (
+      cleanInput === "efeabsteam@gmail.com" || 
+      cleanInput === "efe" || 
+      cleanInput === "@efe" || 
+      cleanInput === "admin@heycoderz.com"
+    ) {
+      if (secureCompare(pass, EFE_PASSWORD)) {
+        const response = NextResponse.json({
+          success: true,
+          user: {
+            id: "admin-master",
+            name: "Efe Taşkın",
+            username: "efe",
+            email: "efeabsteam@gmail.com",
+            role: "admin",
+            badge: "Kurucu & Admin",
+          },
+        });
+
+        // Set secure session cookie
+        response.cookies.set("heycoderz_session", "admin-efe-auth", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 60 * 60 * 24 * 7, // 7 days
+          path: "/",
+        });
+
+        return response;
+      } else {
+        return NextResponse.json(
+          { success: false, message: "Geçersiz kimlik bilgileri." },
+          { status: 401 }
+        );
+      }
+    }
+
+    // 3. Check Admin: Öykü (Timing-safe comparison)
+    if (
+      cleanInput === "oyku@heycoderz.com" || 
+      cleanInput === "oyku" || 
+      cleanInput === "@oyku" || 
+      cleanInput === "öykü"
+    ) {
+      if (secureCompare(pass, OYKU_PASSWORD)) {
+        const response = NextResponse.json({
+          success: true,
+          user: {
+            id: "admin-oyku",
+            name: "Öykü",
+            username: "oyku",
+            email: "oyku@heycoderz.com",
+            role: "admin",
+            badge: "Kurucu Ortak & Admin",
+          },
+        });
+
+        response.cookies.set("heycoderz_session", "admin-oyku-auth", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          maxAge: 60 * 60 * 24 * 7,
+          path: "/",
+        });
+
+        return response;
+      } else {
+        return NextResponse.json(
+          { success: false, message: "Geçersiz kimlik bilgileri." },
+          { status: 401 }
+        );
+      }
+    }
+
+    // 4. Standard developer login
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: "user-" + Date.now(),
+        name: cleanInput.includes("@") ? cleanInput.split("@")[0] : cleanInput,
+        username: cleanInput.includes("@") ? cleanInput.split("@")[0] : cleanInput,
+        email: cleanInput.includes("@") ? cleanInput : `${cleanInput}@heycoderz.com`,
+        role: "developer",
+        badge: "Geliştirici",
+      },
+    });
+
+  } catch (error: any) {
+    return NextResponse.json(
+      { success: false, message: "Sunucu güvenlik hatası oluştu." },
+      { status: 500 }
+    );
+  }
+}

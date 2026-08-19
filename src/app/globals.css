@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --background: #030303;
+    --foreground: #f8fafc;
+    --card: #08080c;
+    --card-border: rgba(255, 255, 255, 0.08);
+    --card-border-hover: rgba(139, 92, 246, 0.4);
+    --purple-primary: #8b5cf6;
+    --blue-violet: #6366f1;
+  }
+
+  body {
+    background-color: #030303;
+    color: #f8fafc;
+    font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow-x: hidden;
+    selection-background-color: #8b5cf6;
+    selection-color: #ffffff;
+  }
+
+  ::selection {
+    background: rgba(139, 92, 246, 0.35);
+    color: #ffffff;
+  }
+}
+
+/* Background Grids and Technical Patterns */
+.bg-tech-grid {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+}
+
+.bg-hero-glow {
+  background: radial-gradient(circle at 50% 30%, rgba(139, 92, 246, 0.15) 0%, rgba(99, 102, 241, 0.08) 35%, transparent 70%);
+}
+
+.bg-editor-glow {
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.18) 0%, rgba(139, 92, 246, 0.12) 40%, transparent 75%);
+}
+
+.bg-card-gradient {
+  background: linear-gradient(180deg, rgba(16, 16, 24, 0.85) 0%, rgba(8, 8, 12, 0.95) 100%);
+}
+
+/* Glassmorphism & Borders */
+.glass-panel {
+  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.glass-pill {
+  background: rgba(139, 92, 246, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+.purple-glow-shadow {
+  box-shadow: 0 0 30px -5px rgba(139, 92, 246, 0.35);
+}
+
+.purple-glow-sm {
+  box-shadow: 0 0 15px -3px rgba(139, 92, 246, 0.3);
+}
+
+.purple-glow-subtle {
+  box-shadow: 0 0 40px -10px rgba(139, 92, 246, 0.2);
+}
+
+.card-hover-effect {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-3px);
+  border-color: rgba(139, 92, 246, 0.4);
+  box-shadow: 0 12px 30px -10px rgba(139, 92, 246, 0.25), 0 0 15px rgba(139, 92, 246, 0.15);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #030303;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1f1f2e;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2e2e44;
+}
