@@ -29,6 +29,8 @@ export interface CommunityPost {
   likes: number;
   likedByUserIds: string[];
   comments: Comment[];
+  isSolved?: boolean;
+  acceptedCommentId?: string;
   createdAt: number | string;
   timestamp?: number;
 }
@@ -87,6 +89,7 @@ interface CommunityContextType {
   addComment: (postId: string, body: string, user?: UserProfile | null) => void;
   toggleLike: (postId: string, userId?: string) => void;
   deletePost: (postId: string) => void;
+  toggleAcceptSolution: (postId: string, commentId: string) => void;
   clearAllDemoPosts: () => void;
 }
 
@@ -258,6 +261,28 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }).catch(() => {});
   };
 
+  const toggleAcceptSolution = (postId: string, commentId: string) => {
+    const updated = posts.map((p) => {
+      if (p.id === postId) {
+        const isCurrentAccepted = p.acceptedCommentId === commentId;
+        return {
+          ...p,
+          isSolved: !isCurrentAccepted,
+          acceptedCommentId: isCurrentAccepted ? undefined : commentId,
+        };
+      }
+      return p;
+    });
+
+    broadcastPosts(updated);
+
+    fetch("/api/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "solve", postId, commentId }),
+    }).catch(() => {});
+  };
+
   const clearAllDemoPosts = () => {
     broadcastPosts([]);
   };
@@ -270,6 +295,7 @@ export const CommunityProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         addComment,
         toggleLike,
         deletePost,
+        toggleAcceptSolution,
         clearAllDemoPosts,
       }}
     >

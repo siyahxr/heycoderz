@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { BackgroundEffects } from "@/components/BackgroundEffects";
+import { DirectMessageDrawer } from "@/components/DirectMessageDrawer";
 import { 
   User, 
   ShieldCheck, 
@@ -17,8 +18,11 @@ import {
   Check, 
   MessageSquare, 
   Code2, 
-  Sparkles,
-  ExternalLink
+  Sparkles, 
+  ExternalLink,
+  Laptop,
+  Send,
+  FolderGit2
 } from "lucide-react";
 import { UserProfile, useAuth, BASE_MAIN_USER, BASE_OYKU } from "@/context/AuthContext";
 import { useCommunity, formatTimeAgo } from "@/context/CommunityContext";
@@ -34,6 +38,8 @@ export default function PublicProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [viewMode, setViewMode] = useState<"standard" | "portfolio">("standard");
+  const [isDmOpen, setIsDmOpen] = useState(false);
 
   useEffect(() => {
     if (!username) {
@@ -49,7 +55,7 @@ export default function PublicProfilePage() {
       return;
     }
 
-    // Redirect legacy efe profile to new $ / siyah profile and clear old cache
+    // Redirect legacy efe profile to new $ / siyah profile
     if (username === "efe" || username === "efecan") {
       try {
         localStorage.removeItem("heycoderz_admin_profile_custom");
@@ -157,8 +163,8 @@ export default function PublicProfilePage() {
       <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full flex-1">
-        {/* Back Link */}
-        <div className="mb-6 flex items-center justify-between">
+        {/* Back Link & View Switcher */}
+        <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <Link
             href="/topluluk"
             className="inline-flex items-center gap-2 text-xs font-medium text-gray-400 hover:text-white transition-colors cursor-pointer"
@@ -167,14 +173,43 @@ export default function PublicProfilePage() {
             <span>Topluluğa Dön</span>
           </Link>
 
-          <button
-            type="button"
-            onClick={handleShare}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-gray-300 hover:text-white transition-all cursor-pointer"
-          >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-            <span>{copied ? "Kopyalandı!" : "Profili Paylaş"}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-black/60 border border-white/10">
+              <button
+                type="button"
+                onClick={() => setViewMode("standard")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  viewMode === "standard"
+                    ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                Standart Profil
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("portfolio")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all cursor-pointer ${
+                  viewMode === "portfolio"
+                    ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                <Laptop className="w-3.5 h-3.5" />
+                Portfolyo / Bio Modu
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleShare}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-medium text-gray-300 hover:text-white transition-all cursor-pointer"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
+              <span>{copied ? "Kopyalandı!" : "Paylaş"}</span>
+            </button>
+          </div>
         </div>
 
         {loading ? (
@@ -198,7 +233,138 @@ export default function PublicProfilePage() {
               Anasayfaya Dön
             </Link>
           </div>
+        ) : viewMode === "portfolio" ? (
+          /* PORTFOLIO / LINK-IN-BIO BENTO VIEW */
+          <div className="space-y-6 animate-in fade-in zoom-in-95 duration-200">
+            {/* Header Bento Card */}
+            <div className="p-8 rounded-3xl bg-[#09090F] border border-indigo-500/40 shadow-2xl space-y-6 text-center relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500" />
+              
+              <div className="flex flex-col items-center space-y-3">
+                <div className="relative">
+                  <img
+                    src={profile.avatar}
+                    alt={profile.name}
+                    className="w-24 h-24 rounded-2xl object-cover border-2 border-indigo-500/50 shadow-2xl shadow-indigo-950/80"
+                  />
+                  {profile.role === "admin" && (
+                    <span className="absolute -bottom-2 -right-2 px-2 py-0.5 rounded-md bg-indigo-600 text-[10px] font-black uppercase text-white shadow-lg border border-indigo-400">
+                      ADMIN
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <h1 className="text-2xl font-black text-white">{profile.name}</h1>
+                  <p className="text-xs text-indigo-400 font-mono">@{profile.username}</p>
+                </div>
+
+                {profile.bio && (
+                  <p className="text-xs sm:text-sm text-gray-300 max-w-lg leading-relaxed">
+                    {profile.bio}
+                  </p>
+                )}
+
+                <div className="flex items-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDmOpen(true)}
+                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg shadow-purple-600/30 flex items-center gap-2 cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Direkt Mesaj Gönder
+                  </button>
+                </div>
+              </div>
+
+              {/* Bio Links Bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-white/10">
+                {profile.website && (
+                  <a
+                    href={profile.website}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+                  >
+                    <Globe className="w-4 h-4 text-purple-400" />
+                    <span>Web Sitesi</span>
+                  </a>
+                )}
+                {profile.github && (
+                  <a
+                    href={profile.github.startsWith("http") ? profile.github : `https://github.com/${profile.github}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+                  >
+                    <FolderGit2 className="w-4 h-4 text-purple-400" />
+                    <span>GitHub</span>
+                  </a>
+                )}
+                {profile.twitter && (
+                  <a
+                    href={profile.twitter.startsWith("http") ? profile.twitter : `https://twitter.com/${profile.twitter.replace(/^@/, "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+                  >
+                    <Share2 className="w-4 h-4 text-sky-400" />
+                    <span>Twitter (X)</span>
+                  </a>
+                )}
+                {profile.linkedin && (
+                  <a
+                    href={profile.linkedin.startsWith("http") ? profile.linkedin : `https://linkedin.com/in/${profile.linkedin}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 text-xs font-semibold flex items-center justify-center gap-2 transition-all"
+                  >
+                    <Globe className="w-4 h-4 text-blue-400" />
+                    <span>LinkedIn</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* Skills & Badges Bento */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="p-6 rounded-3xl bg-[#09090F] border border-white/10 space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-2 font-mono">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Teknoloji & Yetenekler</span>
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {profile.skills?.map((skill, idx) => (
+                    <span
+                      key={idx}
+                      className="px-3 py-1 rounded-xl bg-purple-950/40 border border-purple-500/20 text-purple-200 text-xs font-medium"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="p-6 rounded-3xl bg-[#09090F] border border-white/10 space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2 font-mono">
+                  <Trophy className="w-3.5 h-3.5" />
+                  <span>Kazanılan Başarılar & XP</span>
+                </h3>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-white/5">
+                    <span className="text-xs text-gray-300">Profil Seviyesi:</span>
+                    <span className="text-xs font-bold text-purple-400">{profile.badge || "Geliştirici"}</span>
+                  </div>
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-black/40 border border-white/5">
+                    <span className="text-xs text-gray-300">Toplam XP:</span>
+                    <span className="text-xs font-mono font-bold text-amber-400">{profile.xp || 5420} XP</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         ) : (
+          /* STANDARD PROFILE VIEW */
           <div className="space-y-6">
             {/* Profile Main Card */}
             <div className="relative p-6 sm:p-8 rounded-3xl bg-[#09090F]/90 border border-purple-500/30 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(139,92,246,0.15)] overflow-hidden">
@@ -247,6 +413,15 @@ export default function PublicProfilePage() {
                       <Trophy className="w-4 h-4" />
                       <span>{profile.role === "admin" ? "Kurucu" : `${profile.xp || 100} XP`}</span>
                     </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsDmOpen(true)}
+                      className="flex items-center gap-1 text-purple-400 hover:text-purple-300 transition-colors font-semibold cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Mesaj Gönder</span>
+                    </button>
 
                     {profile.website && (
                       <a
@@ -334,6 +509,13 @@ export default function PublicProfilePage() {
           </div>
         )}
       </div>
+
+      {/* DM Drawer */}
+      <DirectMessageDrawer
+        isOpen={isDmOpen}
+        onClose={() => setIsDmOpen(false)}
+        targetUsername={profile?.username}
+      />
 
       <Footer />
     </main>

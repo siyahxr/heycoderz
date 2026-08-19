@@ -32,6 +32,9 @@ import { MarkdownLiveTool } from "@/components/tools/MarkdownLiveTool";
 import { ImageBase64Tool } from "@/components/tools/ImageBase64Tool";
 import { BoxShadowTool } from "@/components/tools/BoxShadowTool";
 import { ColorContrastTool } from "@/components/tools/ColorContrastTool";
+import { OgMetaPreviewTool } from "@/components/tools/OgMetaPreviewTool";
+import { ApiMockTesterTool } from "@/components/tools/ApiMockTesterTool";
+import { CronRegexBuilderTool } from "@/components/tools/CronRegexBuilderTool";
 
 type ToolKey = 
   | "json-to-ts" 
@@ -45,7 +48,10 @@ type ToolKey =
   | "markdown-live"
   | "image-to-base64"
   | "css-box-shadow"
-  | "color-contrast";
+  | "color-contrast"
+  | "og-meta-preview"
+  | "api-mock-tester"
+  | "cron-regex-builder";
 
 export default function ToolsPage() {
   const [activeTool, setActiveTool] = useState<ToolKey>("json-to-ts");
@@ -58,6 +64,27 @@ export default function ToolsPage() {
       desc: "JSON verisinden anında tip ve Interface üretin", 
       icon: Code2, 
       badge: "En Çok Kullanılan" 
+    },
+    { 
+      id: "og-meta-preview", 
+      name: "OG & Meta Tag Önizleyici", 
+      desc: "Google, Twitter, Discord ve LinkedIn kart simülatörü", 
+      icon: Search, 
+      badge: "Yeni • SEO" 
+    },
+    { 
+      id: "api-mock-tester", 
+      name: "API & Webhook Test", 
+      desc: "REST istekleri, header ve JSON yanıt analizi", 
+      icon: Database, 
+      badge: "Yeni • Postman-lite" 
+    },
+    { 
+      id: "cron-regex-builder", 
+      name: "Cron & Regex Sihirbazı", 
+      desc: "Görsel Cron oluşturucu ve düzenli ifade kütüphanesi", 
+      icon: Wrench, 
+      badge: "Yeni • Otomasyon" 
     },
     { 
       id: "json-formatter", 
@@ -154,7 +181,7 @@ export default function ToolsPage() {
         <div className="text-center max-w-3xl mx-auto mb-10 space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/40 border border-purple-500/30 text-xs font-medium text-purple-300 shadow-[0_0_15px_rgba(139,92,246,0.2)]">
             <Wrench className="w-3.5 h-3.5" />
-            <span>heycoderz Geliştirici Araç Kiti v2.6</span>
+            <span>heycoderz Geliştirici Araç Kiti v3.0</span>
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
             Geliştirici{" "}
@@ -226,6 +253,9 @@ export default function ToolsPage() {
         {/* ACTIVE TOOL WORKSPACE */}
         <div className="rounded-3xl bg-[#09090F]/95 border border-purple-500/30 p-6 sm:p-8 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8),0_0_40px_rgba(139,92,246,0.15)]">
           {activeTool === "json-to-ts" && <JsonToTsTool />}
+          {activeTool === "og-meta-preview" && <OgMetaPreviewTool />}
+          {activeTool === "api-mock-tester" && <ApiMockTesterTool />}
+          {activeTool === "cron-regex-builder" && <CronRegexBuilderTool />}
           {activeTool === "json-formatter" && <JsonFormatterTool />}
           {activeTool === "jwt-debugger" && <JwtDebuggerTool />}
           {activeTool === "css-glass" && <GlassmorphismTool />}
