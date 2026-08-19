@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X, ArrowRight, LogOut, LayoutDashboard, ShieldCheck, Globe, Settings } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { LanguageSelector } from "@/components/LanguageSelector";
 
 interface NavItem {
   id: string;
@@ -75,6 +76,9 @@ export const Navbar: React.FC = () => {
 
         {/* Right: Actions & Auth Area */}
         <div className="hidden md:flex items-center gap-3">
+          {/* Language Switcher */}
+          <LanguageSelector />
+
           {isAuthenticated && user ? (
             <div className="relative">
               <button
@@ -193,6 +197,11 @@ export const Navbar: React.FC = () => {
           </div>
 
           <div className="pt-3 border-t border-white/[0.06] flex flex-col gap-2.5">
+            <div className="flex items-center justify-between px-2 py-1">
+              <span className="text-xs text-gray-400 font-medium">Dil Seçimi / Language:</span>
+              <LanguageSelector />
+            </div>
+
             {isAuthenticated && user ? (
               <>
                 <Link
