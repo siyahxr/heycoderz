@@ -116,7 +116,11 @@ iframe[id^=":2"],
 .goog-tooltip,
 .goog-tooltip:hover,
 .goog-te-gadget,
-#google_translate_element {
+#google_translate_element,
+.VIpgJd-ZVi9od-OR9Mb-OxfBgc,
+.VIpgJd-yAWneB-hGoldt,
+[class*="VIpgJd"],
+.goog-te-spinner-pos {
   display: none !important;
   visibility: hidden !important;
   height: 0px !important;
