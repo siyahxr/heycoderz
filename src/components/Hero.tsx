@@ -42,7 +42,7 @@ export const Hero: React.FC = () => {
 
             {/* Subtitle Paragraph */}
             <p className="text-base sm:text-lg text-gray-400 leading-relaxed max-w-xl font-normal">
-              heycoderz, geliştiricilerin üretkenliğini artıran araçlar, kaynaklar
+              Hey! Coder&apos;z, geliştiricilerin üretkenliğini artıran araçlar, kaynaklar
               ve topluluk desteği sunar. Birlikte öğren, birlikte geliştir.
             </p>
 

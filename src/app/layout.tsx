@@ -20,7 +20,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "heycoderz - Geliştiriciler İçin Her Şey Burada",
-  description: "heycoderz, geliştiricilerin üretkenliğini artıran araçlar, kaynaklar ve topluluk desteği sunar.",
+  description: "Hey! Coder'z, geliştiricilerin üretkenliğini artıran araçlar, kaynaklar ve topluluk desteği sunar.",
   keywords: ["geliştirici", "yazılım", "developer tools", "heycoderz", "kodlama", "topluluk"],
   authors: [{ name: "heycoderz Team" }],
   icons: {
