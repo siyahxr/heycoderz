@@ -3,11 +3,20 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { secureCompare, sanitizeInput } from "@/lib/security";
 
+export interface SecurityLogItem {
+  id: string;
+  type: string;
+  timestamp: number;
+  ip?: string;
+  details?: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
   username: string;
   email: string;
+  pendingEmail?: string;
   avatar: string;
   role: "admin" | "developer" | "pro";
   badge: string;
@@ -20,6 +29,8 @@ export interface UserProfile {
   skills: string[];
   xp: number;
   joinedAt: string;
+  email_verified?: boolean;
+  securityLogs?: SecurityLogItem[];
 }
 
 export const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=200&auto=format&fit=crop&q=80";
@@ -41,6 +52,7 @@ export const BASE_MAIN_USER: UserProfile = {
   skills: ["Next.js", "React", "TypeScript", "Tailwind CSS", "Node.js", "Cloud Architecture"],
   xp: 5420,
   joinedAt: "Ocak 2026",
+  email_verified: true,
 };
 
 export const BASE_OYKU: UserProfile = {
@@ -60,13 +72,16 @@ export const BASE_OYKU: UserProfile = {
   skills: ["UI/UX Design", "Design Systems", "React", "Next.js", "Tailwind CSS", "Figma"],
   xp: 5420,
   joinedAt: "Ocak 2026",
+  email_verified: true,
 };
 
 interface AuthContextType {
   user: UserProfile | null;
   isAuthenticated: boolean;
-  login: (emailOrUsername: string, pass: string) => Promise<{ success: boolean; message?: string }>;
-  register: (name: string, username: string, email: string, pass: string) => Promise<{ success: boolean; message?: string }>;
+  login: (emailOrUsername: string, pass: string, turnstileToken?: string) => Promise<{ success: boolean; message?: string; isUnverified?: boolean; email?: string }>;
+  register: (name: string, username: string, email: string, pass: string, turnstileToken?: string) => Promise<{ success: boolean; message?: string; emailSent?: boolean; email?: string }>;
+  resendVerification: (emailOrUsername: string, turnstileToken?: string) => Promise<{ success: boolean; message?: string }>;
+  updateEmail: (newEmail: string, turnstileToken?: string) => Promise<{ success: boolean; message?: string; emailSent?: boolean }>;
   updateProfile: (updatedData: Partial<UserProfile>) => Promise<void>;
   changePassword: (oldPass: string, newPass: string) => Promise<{ success: boolean; message?: string }>;
   deleteAccount: (password: string) => Promise<{ success: boolean; message?: string }>;
@@ -114,7 +129,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .catch(() => {});
   }, []);
 
-  const login = async (emailOrUsername: string, pass: string): Promise<{ success: boolean; message?: string }> => {
+  const login = async (
+    emailOrUsername: string,
+    pass: string,
+    turnstileToken?: string
+  ): Promise<{ success: boolean; message?: string; isUnverified?: boolean; email?: string }> => {
     const input = sanitizeInput(emailOrUsername.trim().toLowerCase());
 
     // Try server API authentication first
@@ -122,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ emailOrUsername: input, password: pass }),
+        body: JSON.stringify({ emailOrUsername: input, password: pass, turnstileToken }),
       });
       const data = await res.json();
 
@@ -130,6 +149,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(data.user);
         localStorage.setItem("heycoderz_active_user", JSON.stringify(data.user));
         return { success: true };
+      } else if (res.status === 403 && data.isUnverified) {
+        return {
+          success: false,
+          isUnverified: true,
+          email: data.email || input,
+          message: data.message || "Please verify your email address first.",
+        };
       } else if (res.status === 401 || res.status === 429) {
         return { success: false, message: data.message || "Giriş başarısız." };
       }
@@ -179,6 +205,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (found) {
         if (secureCompare(found.password, pass)) {
+          if (found.email_verified === false) {
+            return {
+              success: false,
+              isUnverified: true,
+              email: found.email,
+              message: "Please verify your email address first. / Lütfen önce e-posta adresinizi doğrulayın.",
+            };
+          }
           const { password, ...userProfile } = found;
           setUser(userProfile);
           localStorage.setItem("heycoderz_active_user", JSON.stringify(userProfile));
@@ -189,88 +223,119 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch {}
 
-    // Fallback normal login for new developers
-    const genericUser: UserProfile = {
-      id: "user-" + Date.now(),
-      name: input.includes("@") ? input.split("@")[0] : input,
-      username: input.includes("@") ? input.split("@")[0] : input,
-      email: input.includes("@") ? input : `${input}@heycoderz.com`,
-      avatar: DEFAULT_AVATAR,
-      role: "developer",
-      badge: "Geliştirici",
-      bio: "heycoderz geliştirici topluluğu üyesi.",
-      website: "",
-      github: "",
-      twitter: "",
-      linkedin: "",
-      skills: ["React", "JavaScript"],
-      xp: 100,
-      joinedAt: "Yeni",
-    };
-
-    setUser(genericUser);
-    try {
-      localStorage.setItem("heycoderz_active_user", JSON.stringify(genericUser));
-    } catch {}
-    return { success: true };
+    return { success: false, message: "Geçersiz e-posta/kullanıcı adı veya şifre." };
   };
 
   const register = async (
     name: string,
     username: string,
     email: string,
-    pass: string
-  ): Promise<{ success: boolean; message?: string }> => {
+    pass: string,
+    turnstileToken?: string
+  ): Promise<{ success: boolean; message?: string; emailSent?: boolean; email?: string }> => {
     const cleanEmail = sanitizeInput(email.trim().toLowerCase());
     const cleanUsername = sanitizeInput(username.trim().toLowerCase().replace(/[^a-z0-9_]/g, ""));
     const cleanName = sanitizeInput(name.trim()) || "Yeni Geliştirici";
 
-    const registeredUsersStr = localStorage.getItem("heycoderz_registered_users");
-    const registeredUsers = registeredUsersStr ? JSON.parse(registeredUsersStr) : [];
-
-    if (
-      registeredUsers.some((u: any) => u.email === cleanEmail || u.username === cleanUsername)
-    ) {
-      return { success: false, message: "Bu e-posta veya kullanıcı adı ile zaten bir hesap mevcut." };
-    }
-
-    const newUser: UserProfile = {
-      id: "usr-" + Date.now(),
-      name: cleanName,
-      username: cleanUsername || "dev" + Math.floor(Math.random() * 1000),
-      email: cleanEmail,
-      avatar: DEFAULT_AVATAR,
-      role: "developer",
-      badge: "Yeni Geliştirici 🚀",
-      bio: "heycoderz ile kodlamaya başladım!",
-      website: "",
-      github: "",
-      twitter: "",
-      instagram: "https://instagram.com/heycoderz",
-      linkedin: "",
-      skills: ["HTML", "CSS", "JavaScript"],
-      xp: 100,
-      joinedAt: "Bugün",
-    };
-
-    registeredUsers.push({ ...newUser, password: pass });
     try {
-      localStorage.setItem("heycoderz_registered_users", JSON.stringify(registeredUsers));
-      localStorage.setItem("heycoderz_active_user", JSON.stringify(newUser));
-    } catch {}
-
-    setUser(newUser);
-
-    // Sync with server DB in background
-    try {
-      await fetch("/api/sync", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userProfile: { ...newUser, password: pass } }),
+        body: JSON.stringify({
+          name: cleanName,
+          username: cleanUsername,
+          email: cleanEmail,
+          password: pass,
+          turnstileToken,
+        }),
       });
-    } catch {}
 
-    return { success: true };
+      const data = await res.json();
+
+      if (data.success) {
+        return {
+          success: true,
+          emailSent: data.emailSent !== false,
+          email: cleanEmail,
+          message: data.message || "Kayıt başarılı! Lütfen e-postanızı doğrulayın.",
+        };
+      } else {
+        return {
+          success: false,
+          message: data.message || "Kayıt işlemi başarısız.",
+        };
+      }
+    } catch (err) {
+      console.error("Register request failed:", err);
+      return {
+        success: false,
+        message: "Sunucu bağlantısı sırasında bir hata oluştu. Lütfen tekrar deneyin.",
+      };
+    }
+  };
+
+  const resendVerification = async (
+    emailOrUsername: string,
+    turnstileToken?: string
+  ): Promise<{ success: boolean; message?: string }> => {
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emailOrUsername, turnstileToken }),
+      });
+      const data = await res.json();
+      return {
+        success: data.success,
+        message: data.message || (data.success ? "Doğrulama e-postası gönderildi." : "Gönderim başarısız."),
+      };
+    } catch {
+      return {
+        success: false,
+        message: "Doğrulama e-postası gönderilirken sunucu hatası oluştu.",
+      };
+    }
+  };
+
+  const updateEmail = async (
+    newEmail: string,
+    turnstileToken?: string
+  ): Promise<{ success: boolean; message?: string; emailSent?: boolean }> => {
+    try {
+      const res = await fetch("/api/auth/update-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newEmail, turnstileToken }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        if (data.user) {
+          setUser(data.user);
+          localStorage.setItem("heycoderz_active_user", JSON.stringify(data.user));
+        } else if (user) {
+          const updated = { ...user, email: newEmail.trim().toLowerCase(), email_verified: false };
+          setUser(updated);
+          localStorage.setItem("heycoderz_active_user", JSON.stringify(updated));
+        }
+        return {
+          success: true,
+          emailSent: data.emailSent !== false,
+          message: data.message || "Doğrulama e-postası gönderildi.",
+        };
+      }
+
+      return {
+        success: false,
+        message: data.message || "E-posta güncellenemedi.",
+      };
+    } catch (e) {
+      console.error("updateEmail error:", e);
+      return {
+        success: false,
+        message: "Sunucu bağlantısı sırasında bir hata oluştu.",
+      };
+    }
   };
 
   const updateProfile = async (updatedData: Partial<UserProfile>) => {
@@ -398,6 +463,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       localStorage.removeItem("heycoderz_active_user");
     } catch {}
+    // Invalidate server session cookie
+    try {
+      fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    } catch {}
   };
 
   return (
@@ -407,6 +476,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!user,
         login,
         register,
+        resendVerification,
+        updateEmail,
         updateProfile,
         changePassword,
         deleteAccount,

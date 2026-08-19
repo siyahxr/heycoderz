@@ -1,6 +1,7 @@
 import React from "react";
 import { BackgroundEffects } from "@/components/BackgroundEffects";
 import { Navbar } from "@/components/Navbar";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { Hero } from "@/components/Hero";
 import { TrustBar } from "@/components/TrustBar";
 import { Footer } from "@/components/Footer";
@@ -14,6 +15,7 @@ export default function Home() {
       {/* Main Content */}
       <div className="relative z-10 flex flex-col min-h-screen">
         <Navbar />
+        <EmailVerificationBanner />
         
         <main className="flex-1">
           <Hero />

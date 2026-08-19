@@ -1,11 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchCloudDatabase, saveCloudDatabase } from "@/lib/serverDb";
-import { checkRateLimit, secureCompare, sanitizeInput } from "@/lib/security";
+import { fetchCloudDatabase, saveCloudDatabase, appendSecurityLog } from "@/lib/serverDb";
+import {
+  checkRateLimit,
+  verifyPassword,
+  hashPassword,
+  validatePasswordStrength,
+  sanitizeInput,
+  getClientIp,
+  verifySessionToken,
+  enforcePayloadLimit,
+} from "@/lib/security";
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get("x-forwarded-for") || "local-ip";
-    const rateLimit = checkRateLimit(`pwd_change_${ip}`, 5, 60 * 1000);
+    const ip = getClientIp(req);
+    const rateLimit = await checkRateLimit(`pwd_change_${ip}`, 5, 60 * 1000);
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
@@ -17,6 +26,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+
+    // Payload size limit (20KB)
+    if (!enforcePayloadLimit(body, 20 * 1024)) {
+      return NextResponse.json(
+        { success: false, message: "İstek boyutu çok büyük." },
+        { status: 413 }
+      );
+    }
+
     const { usernameOrEmail, currentPassword, newPassword } = body;
 
     if (!usernameOrEmail || !currentPassword || !newPassword) {
@@ -26,82 +44,36 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (newPassword.length < 6) {
+    // Input length limits
+    if (String(usernameOrEmail).length > 254 || String(currentPassword).length > 128 || String(newPassword).length > 128) {
       return NextResponse.json(
-        { success: false, message: "Yeni şifre en az 6 karakter olmalıdır." },
+        { success: false, message: "Geçersiz giriş boyutu." },
         { status: 400 }
       );
     }
 
-    const cleanInput = sanitizeInput(usernameOrEmail.trim().toLowerCase());
+    // Validate new password strength
+    const pwdCheck = validatePasswordStrength(String(newPassword));
+    if (!pwdCheck.valid) {
+      return NextResponse.json(
+        { success: false, message: pwdCheck.message },
+        { status: 400 }
+      );
+    }
+
+    // Session verification (IDOR prevention)
+    const sessionCookie = req.cookies.get("heycoderz_session")?.value;
+    const session = sessionCookie ? verifySessionToken(sessionCookie) : { valid: false };
+
+    const cleanInput = sanitizeInput(String(usernameOrEmail).trim().toLowerCase());
     const db = await fetchCloudDatabase();
-    const adminPasswords = { ...db.adminPasswords };
     let users = [...db.users];
 
-    // 1. Admin: $ / Siyah
-    if (
-      cleanInput === "siyah" ||
-      cleanInput === "@siyah" ||
-      cleanInput === "$" ||
-      cleanInput === "admin" ||
-      cleanInput === "admin@heycoderz.com" ||
-      cleanInput === "siyah@heycoderz.com"
-    ) {
-      const activeSiyahPass = adminPasswords.siyah || "siyah2026heycoderz!";
-      if (!secureCompare(currentPassword, activeSiyahPass)) {
-        return NextResponse.json(
-          { success: false, message: "Mevcut şifreniz hatalı." },
-          { status: 401 }
-        );
-      }
-
-      adminPasswords.siyah = newPassword;
-      users = users.map((u) =>
-        u.username === "siyah" ? { ...u, password: newPassword } : u
-      );
-
-      await saveCloudDatabase({ adminPasswords, users });
-      return NextResponse.json({
-        success: true,
-        message: "$ (Admin) şifresi başarıyla güncellendi.",
-      });
-    }
-
-    // 2. Admin: Öykü
-    if (
-      cleanInput === "oyku" ||
-      cleanInput === "@oyku" ||
-      cleanInput === "öykü" ||
-      cleanInput === "oyku@heycoderz.com"
-    ) {
-      const activeOykuPass = adminPasswords.oyku || "oyku2026heycoderz!";
-      if (
-        !secureCompare(currentPassword, activeOykuPass) &&
-        !secureCompare(currentPassword, "oyku2026!")
-      ) {
-        return NextResponse.json(
-          { success: false, message: "Mevcut şifreniz hatalı." },
-          { status: 401 }
-        );
-      }
-
-      adminPasswords.oyku = newPassword;
-      users = users.map((u) =>
-        u.username === "oyku" ? { ...u, password: newPassword } : u
-      );
-
-      await saveCloudDatabase({ adminPasswords, users });
-      return NextResponse.json({
-        success: true,
-        message: "Öykü (Kurucu Ortak) şifresi başarıyla güncellendi.",
-      });
-    }
-
-    // 3. Registered User
+    // Find user
     const userIndex = users.findIndex(
       (u) =>
         u.username.toLowerCase() === cleanInput ||
-        u.email?.toLowerCase() === cleanInput
+        (u.email && u.email?.toLowerCase() === cleanInput)
     );
 
     if (userIndex === -1) {
@@ -112,26 +84,42 @@ export async function POST(req: NextRequest) {
     }
 
     const storedUser = users[userIndex];
-    if (storedUser.password && !secureCompare(currentPassword, storedUser.password)) {
+
+    // IDOR check: If session is active, verify it belongs to this user
+    if (session.valid && session.userId !== storedUser.id) {
+      return NextResponse.json(
+        { success: false, message: "Yetkisiz işlem." },
+        { status: 403 }
+      );
+    }
+
+    // Verify current password using passwordHash
+    if (!storedUser.passwordHash || !verifyPassword(String(currentPassword), storedUser.passwordHash)) {
       return NextResponse.json(
         { success: false, message: "Mevcut şifreniz hatalı." },
         { status: 401 }
       );
     }
 
+    // Hash and store new password (no plaintext!)
+    const newPwdHash = hashPassword(String(newPassword));
     users[userIndex] = {
       ...storedUser,
-      password: newPassword,
+      passwordHash: newPwdHash,
+      tokenVersion: (storedUser.tokenVersion || 1) + 1,
     };
 
     await saveCloudDatabase({ users });
+    await appendSecurityLog(storedUser.id, "PASSWORD_CHANGED", ip);
+
     return NextResponse.json({
       success: true,
-      message: "Şifreniz başarıyla değiştirildi.",
+      message: "Şifreniz başarıyla güncellendi.",
     });
   } catch (error: any) {
+    console.error("Password change error:", error?.message);
     return NextResponse.json(
-      { success: false, message: error.message || "Sunucu hatası oluştu." },
+      { success: false, message: "Sunucu hatası oluştu. Lütfen tekrar deneyin." },
       { status: 500 }
     );
   }

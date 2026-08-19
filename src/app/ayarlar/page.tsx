@@ -28,13 +28,17 @@ import {
   Database,
   Check,
   Share2,
-  Code2
+  Code2,
+  Mail,
+  ShieldCheck,
+  ArrowRight,
+  Edit2
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { user, isAuthenticated, updateProfile, changePassword, deleteAccount, logout } = useAuth();
+  const { user, isAuthenticated, updateProfile, updateEmail, resendVerification, changePassword, deleteAccount, logout } = useAuth();
 
   const [activeTab, setActiveTab] = useState<"profile" | "avatar" | "security" | "data" | "danger">("profile");
 
@@ -66,6 +70,13 @@ export default function SettingsPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Email verification and update states
+  const [emailResendLoading, setEmailResendLoading] = useState(false);
+  const [emailActionFeedback, setEmailActionFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
+  const [newEmailValue, setNewEmailValue] = useState("");
+  const [emailUpdateLoading, setEmailUpdateLoading] = useState(false);
 
   // Toast / Feedback States
   const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -104,10 +115,18 @@ export default function SettingsPage() {
         .map((s) => s.trim())
         .filter(Boolean);
 
+      // If email changed in standard input, trigger email update flow
+      if (email.trim() && email.trim().toLowerCase() !== (user.email || "").toLowerCase()) {
+        const emailRes = await updateEmail(email.trim());
+        if (!emailRes.success) {
+          showToast(emailRes.message || "E-posta adresi güncellenemedi.", "error");
+          return;
+        }
+      }
+
       await updateProfile({
         name,
         username,
-        email,
         bio,
         website,
         github,
@@ -117,9 +136,69 @@ export default function SettingsPage() {
         skills: skillsArray,
       });
 
-      showToast("Profil bilgileriniz başarıyla kaydedildi ve senkronize edildi!");
+      showToast("Profil bilgileriniz başarıyla kaydedildi!");
     } catch {
       showToast("Profil kaydedilirken bir hata oluştu.", "error");
+    }
+  };
+
+  // Handle Resend Verification Email from Settings
+  const handleResendEmail = async () => {
+    if (!user?.email) return;
+    setEmailResendLoading(true);
+    setEmailActionFeedback(null);
+    try {
+      const res = await resendVerification(user.email);
+      setEmailResendLoading(false);
+      if (res.success) {
+        setEmailActionFeedback({
+          type: "success",
+          text: res.message || "Doğrulama bağlantısı e-posta adresinize gönderildi.",
+        });
+        showToast("Doğrulama e-postası gönderildi!");
+      } else {
+        setEmailActionFeedback({
+          type: "error",
+          text: res.message || "E-posta gönderimi başarısız oldu.",
+        });
+        showToast(res.message || "E-posta gönderilemedi.", "error");
+      }
+    } catch {
+      setEmailResendLoading(false);
+      setEmailActionFeedback({ type: "error", text: "Sunucu bağlantı hatası oluştu." });
+      showToast("Sunucu bağlantı hatası.", "error");
+    }
+  };
+
+  // Handle Add/Change Email directly from Email Card
+  const handleEmailCardSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmailValue.trim()) return;
+    setEmailUpdateLoading(true);
+    setEmailActionFeedback(null);
+    try {
+      const res = await updateEmail(newEmailValue.trim());
+      setEmailUpdateLoading(false);
+      if (res.success) {
+        setIsChangingEmail(false);
+        setEmail(newEmailValue.trim().toLowerCase());
+        setNewEmailValue("");
+        setEmailActionFeedback({
+          type: "success",
+          text: res.message || "E-posta kaydedildi ve doğrulama e-postası gönderildi.",
+        });
+        showToast("E-posta güncellendi ve doğrulama e-postası gönderildi!");
+      } else {
+        setEmailActionFeedback({
+          type: "error",
+          text: res.message || "E-posta güncellenemedi.",
+        });
+        showToast(res.message || "E-posta güncellenemedi.", "error");
+      }
+    } catch {
+      setEmailUpdateLoading(false);
+      setEmailActionFeedback({ type: "error", text: "Sunucu hatası oluştu." });
+      showToast("Sunucu hatası oluştu.", "error");
     }
   };
 
@@ -432,15 +511,169 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-medium text-gray-300 mb-1.5">E-posta Adresi</label>
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white/[0.03] border border-white/10 text-white text-xs focus:border-purple-500 focus:outline-none transition-all"
-                      placeholder="eposta@domain.com"
-                    />
+                  {/* ========================================================= */}
+                  {/* EMAIL & VERIFICATION STATUS CARD (SCENARIOS A, B, C)      */}
+                  {/* ========================================================= */}
+                  <div className="p-5 rounded-2xl bg-[#0e0c18] border border-purple-500/25 space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-purple-400" />
+                        <span className="text-xs font-bold text-white uppercase tracking-wider">
+                          E-posta &amp; Hesap Doğrulama
+                        </span>
+                      </div>
+                      
+                      {user.email && user.email_verified === true && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 text-[11px] font-semibold">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>E-posta Doğrulandı</span>
+                        </span>
+                      )}
+
+                      {user.email && user.email_verified !== true && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-950/70 border border-amber-500/40 text-amber-300 text-[11px] font-semibold">
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          <span>Doğrulanmadı</span>
+                        </span>
+                      )}
+
+                      {!user.email && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-950/70 border border-red-500/40 text-red-300 text-[11px] font-semibold">
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          <span>Tanımlı E-posta Yok</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Scenario Feedback */}
+                    {emailActionFeedback && (
+                      <div
+                        className={`p-3 rounded-xl text-xs flex items-center gap-2 ${
+                          emailActionFeedback.type === "success"
+                            ? "bg-emerald-950/80 border border-emerald-500/40 text-emerald-300"
+                            : "bg-red-950/80 border border-red-500/40 text-red-300"
+                        }`}
+                      >
+                        {emailActionFeedback.type === "success" ? (
+                          <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        ) : (
+                          <AlertTriangle className="w-4 h-4 shrink-0" />
+                        )}
+                        <span>{emailActionFeedback.text}</span>
+                      </div>
+                    )}
+
+                    {/* PENDING EMAIL NOTIFICATION */}
+                    {user.pendingEmail && (
+                      <div className="p-3.5 rounded-xl bg-purple-950/60 border border-purple-500/40 text-purple-200 text-xs flex items-start gap-2.5">
+                        <Mail className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+                        <div className="space-y-0.5">
+                          <p className="font-semibold text-purple-100">Doğrulama Bekleyen Yeni E-posta:</p>
+                          <p className="text-[11px] text-gray-300 leading-relaxed">
+                            <strong className="text-white font-mono">{user.pendingEmail}</strong> adresine onay bağlantısı gönderildi. Yeni e-postanız onaylanana kadar mevcut e-posta adresiniz ({user.email}) aktif kalacaktır.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SCENARIO A: Email exists and is verified */}
+                    {user.email && user.email_verified === true && !isChangingEmail && (
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                        <div>
+                          <p className="text-xs text-gray-400">Kayıtlı E-posta:</p>
+                          <p className="text-sm font-semibold text-white mt-0.5">{user.email}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsChangingEmail(true);
+                            setNewEmailValue(user.email || "");
+                          }}
+                          className="px-3.5 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/10 text-xs font-medium text-gray-300 hover:text-white transition-all self-start sm:self-auto cursor-pointer"
+                        >
+                          E-postayı Değiştir
+                        </button>
+                      </div>
+                    )}
+
+                    {/* SCENARIO B: Email exists but NOT verified */}
+                    {user.email && user.email_verified !== true && !isChangingEmail && (
+                      <div className="space-y-3 pt-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div>
+                            <p className="text-xs text-gray-400">Kayıtlı E-posta:</p>
+                            <p className="text-sm font-semibold text-white mt-0.5">{user.email}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsChangingEmail(true);
+                              setNewEmailValue(user.email || "");
+                            }}
+                            className="px-3 py-1.5 rounded-xl bg-white/[0.05] hover:bg-white/10 border border-white/10 text-xs text-gray-300 hover:text-white transition-all self-start sm:self-auto cursor-pointer"
+                          >
+                            Düzelt / Değiştir
+                          </button>
+                        </div>
+                        <p className="text-xs text-amber-200/80 leading-relaxed">
+                          Hesabını güvence altına almak ve tüm platform özelliklerini kullanabilmek için e-posta adresini doğrula.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={handleResendEmail}
+                          disabled={emailResendLoading}
+                          className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-2 shadow-[0_0_20px_rgba(139,92,246,0.35)] transition-all cursor-pointer disabled:opacity-50"
+                        >
+                          {emailResendLoading ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Mail className="w-3.5 h-3.5" />
+                          )}
+                          <span>Doğrulama E-postasını Gönder</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* SCENARIO C or Email Change Form */}
+                    {(!user.email || isChangingEmail) && (
+                      <div className="space-y-3 pt-1">
+                        <p className="text-xs text-gray-300">
+                          {!user.email
+                            ? "Hesabınıza tanımlı bir e-posta adresi bulunmuyor. Lütfen geçerli bir e-posta adresi girin ve doğrulayın:"
+                            : "Yeni e-posta adresinizi girin. Değişiklik yapıldığında yeni adresinize bir doğrulama bağlantısı gönderilecektir:"}
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <input
+                            type="email"
+                            value={newEmailValue}
+                            onChange={(e) => setNewEmailValue(e.target.value)}
+                            placeholder="yeni.eposta@domain.com"
+                            className="flex-1 px-3.5 py-2.5 rounded-xl bg-black/50 border border-white/15 text-white text-xs focus:border-purple-500 focus:outline-none"
+                            required
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={handleEmailCardSubmit}
+                              disabled={emailUpdateLoading || !newEmailValue.trim()}
+                              className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all cursor-pointer disabled:opacity-50 shrink-0"
+                            >
+                              {emailUpdateLoading && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                              <span>{!user.email ? "E-posta Ekle ve Doğrula" : "Kaydet ve Doğrula"}</span>
+                            </button>
+                            {isChangingEmail && (
+                              <button
+                                type="button"
+                                onClick={() => setIsChangingEmail(false)}
+                                className="px-3.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white text-xs font-medium transition-all cursor-pointer"
+                              >
+                                İptal
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -765,6 +998,55 @@ export default function SettingsPage() {
                     </button>
                   </div>
                 </form>
+
+                {/* Security Activity Log (Güvenlik Günlüğü) */}
+                <div className="pt-6 border-t border-white/[0.08] space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-purple-400" />
+                        <span>Hesap Güvenlik Günlüğü</span>
+                      </h3>
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        Hesabınızda gerçekleşen son güvenlik ve kimlik doğrulama olayları (Gizlilik kurallarına uygun IP maskeleme uygulanır).
+                      </p>
+                    </div>
+                  </div>
+
+                  {user.securityLogs && user.securityLogs.length > 0 ? (
+                    <div className="divide-y divide-white/[0.06] bg-black/40 border border-white/[0.08] rounded-2xl overflow-hidden max-h-60 overflow-y-auto">
+                      {user.securityLogs.map((log) => (
+                        <div key={log.id} className="p-3 sm:px-4 flex items-center justify-between text-xs hover:bg-white/[0.02] transition-colors">
+                          <div className="space-y-0.5">
+                            <p className="font-semibold text-gray-200">
+                              {log.type === "LOGIN_SUCCESS" && "Giriş Başarılı"}
+                              {log.type === "LOGIN_FAILED" && "Başarısız Giriş Denemesi"}
+                              {log.type === "EMAIL_VERIFIED" && "E-posta Doğrulandı"}
+                              {log.type === "PASSWORD_CHANGED" && "Şifre Değiştirildi"}
+                              {log.type === "PASSWORD_RESET_REQUESTED" && "Şifre Sıfırlama İstendi"}
+                              {log.type === "PASSWORD_RESET_COMPLETED" && "Şifre Sıfırlama Tamamlandı"}
+                              {log.type === "EMAIL_CHANGE_REQUESTED" && "E-posta Değişikliği İstendi"}
+                              {log.type === "EMAIL_CHANGED" && "Yeni E-posta Onaylandı"}
+                              {log.type === "LOGOUT" && "Çıkış Yapıldı"}
+                              {log.type === "ACCOUNT_DELETED" && "Hesap Silindi"}
+                            </p>
+                            {log.details && (
+                              <p className="text-[11px] text-gray-400">{log.details}</p>
+                            )}
+                          </div>
+                          <div className="text-right text-[10px] text-gray-400 font-mono space-y-0.5 shrink-0 ml-4">
+                            <p>{new Date(log.timestamp).toLocaleDateString("tr-TR")} {new Date(log.timestamp).toLocaleTimeString("tr-TR", { hour: '2-digit', minute: '2-digit' })}</p>
+                            {log.ip && <p className="text-purple-400/80">IP: {log.ip}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.06] text-center text-xs text-gray-400">
+                      Henüz kayıtlı güvenlik olayı bulunmuyor.
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

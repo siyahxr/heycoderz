@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
+import { EmailVerificationBanner } from "@/components/EmailVerificationBanner";
 import { Footer } from "@/components/Footer";
 import { BackgroundEffects } from "@/components/BackgroundEffects";
 import {
@@ -232,6 +233,7 @@ export default function DashboardPage() {
     <div className="relative min-h-screen bg-[#030303] text-gray-100 flex flex-col font-sans selection:bg-purple-500/30 selection:text-white">
       <BackgroundEffects />
       <Navbar />
+      <EmailVerificationBanner />
 
       <main className="relative z-10 flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full">
 

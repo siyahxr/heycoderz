@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fetchCloudDatabase, saveCloudDatabase } from "@/lib/serverDb";
-import { checkRateLimit, secureCompare, sanitizeInput } from "@/lib/security";
+import {
+  checkRateLimit,
+  verifyPassword,
+  sanitizeInput,
+  getClientIp,
+  verifySessionToken,
+  enforcePayloadLimit,
+} from "@/lib/security";
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get("x-forwarded-for") || "local-ip";
-    const rateLimit = checkRateLimit(`acc_del_${ip}`, 5, 60 * 1000);
+    const ip = getClientIp(req);
+    const rateLimit = await checkRateLimit(`acc_del_${ip}`, 5, 60 * 1000);
     if (!rateLimit.allowed) {
       return NextResponse.json(
         {
@@ -17,6 +24,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+
+    // Payload size limit (10KB)
+    if (!enforcePayloadLimit(body, 10 * 1024)) {
+      return NextResponse.json(
+        { success: false, message: "İstek boyutu çok büyük." },
+        { status: 413 }
+      );
+    }
+
     const { usernameOrEmail, password } = body;
 
     if (!usernameOrEmail || !password) {
@@ -26,35 +42,56 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const cleanInput = sanitizeInput(usernameOrEmail.trim().toLowerCase());
-    const db = await fetchCloudDatabase();
-
-    // Prevent deleting master root account directly
-    if (cleanInput === "efe" || cleanInput === "efeabsteam@gmail.com") {
+    // Input length limits
+    if (String(usernameOrEmail).length > 254 || String(password).length > 128) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Ana Kurucu hesabı silinemez. Verileri Ayarlar > Veri Sıfırla kısmından sıfırlayabilirsiniz.",
-        },
-        { status: 403 }
+        { success: false, message: "Geçersiz giriş." },
+        { status: 400 }
       );
     }
 
-    const userIndex = db.users.findIndex(
+    // Session verification (IDOR prevention: user can only delete their own account)
+    const sessionCookie = req.cookies.get("heycoderz_session")?.value;
+    const session = sessionCookie ? verifySessionToken(sessionCookie) : { valid: false };
+
+    const cleanInput = sanitizeInput(String(usernameOrEmail).trim().toLowerCase());
+    const db = await fetchCloudDatabase();
+
+    // Prevent deleting admin/founder accounts
+    const adminUsernames = ["siyah", "oyku"];
+    const foundUser = db.users.find(
       (u) =>
         u.username.toLowerCase() === cleanInput ||
-        u.email?.toLowerCase() === cleanInput
+        (u.email && u.email?.toLowerCase() === cleanInput)
     );
 
-    if (userIndex === -1) {
+    if (!foundUser) {
       return NextResponse.json(
         { success: false, message: "Kullanıcı bulunamadı." },
         { status: 404 }
       );
     }
 
-    const userToDelete = db.users[userIndex];
-    if (userToDelete.password && !secureCompare(password, userToDelete.password)) {
+    if (adminUsernames.includes(foundUser.username.toLowerCase())) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Kurucu hesapları silinemez.",
+        },
+        { status: 403 }
+      );
+    }
+
+    // IDOR check: Session user must match the user being deleted
+    if (session.valid && session.userId !== foundUser.id) {
+      return NextResponse.json(
+        { success: false, message: "Yetkisiz işlem. Sadece kendi hesabınızı silebilirsiniz." },
+        { status: 403 }
+      );
+    }
+
+    // Verify password using passwordHash
+    if (!foundUser.passwordHash || !verifyPassword(String(password), foundUser.passwordHash)) {
       return NextResponse.json(
         { success: false, message: "Hesap silme şifresi hatalı." },
         { status: 401 }
@@ -62,18 +99,31 @@ export async function POST(req: NextRequest) {
     }
 
     // Filter out user from database
-    const newUsers = db.users.filter((_, idx) => idx !== userIndex);
-    const newPosts = db.posts.filter((p) => p.authorId !== userToDelete.id && p.authorUsername !== userToDelete.username);
+    const newUsers = db.users.filter((u) => u.id !== foundUser.id);
+    const newPosts = db.posts.filter(
+      (p) => p.authorId !== foundUser.id && p.authorUsername !== foundUser.username
+    );
 
     await saveCloudDatabase({ users: newUsers, posts: newPosts });
 
-    return NextResponse.json({
+    // Clear session cookie
+    const response = NextResponse.json({
       success: true,
       message: "Hesabınız ve ilişkili verileriniz başarıyla silindi.",
     });
+    response.cookies.set("heycoderz_session", "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 0,
+      path: "/",
+    });
+
+    return response;
   } catch (error: any) {
+    console.error("Account deletion error:", error?.message);
     return NextResponse.json(
-      { success: false, message: error.message || "Hesap silinirken bir hata oluştu." },
+      { success: false, message: "Hesap silinirken bir hata oluştu. Lütfen tekrar deneyin." },
       { status: 500 }
     );
   }

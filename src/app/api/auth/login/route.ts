@@ -1,25 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkRateLimit, secureCompare, sanitizeInput } from "@/lib/security";
-import { fetchCloudDatabase } from "@/lib/serverDb";
+import {
+  checkRateLimit,
+  sanitizeInput,
+  verifyPassword,
+  performDummyPasswordCheck,
+  getClientIp,
+  verifyTurnstileToken,
+  createSessionToken,
+  enforcePayloadLimit,
+} from "@/lib/security";
+import { fetchCloudDatabase, appendSecurityLog } from "@/lib/serverDb";
 
 export async function POST(req: NextRequest) {
   try {
-    const ip = req.headers.get("x-forwarded-for") || "local-ip";
-    
-    // 1. Rate Limiting Protection (Max 10 attempts / minute)
-    const rateLimit = checkRateLimit(`login_${ip}`, 10, 60 * 1000);
-    if (!rateLimit.allowed) {
+    const ip = getClientIp(req);
+
+    // 1. Rate Limiting Protection (IP-level: Max 10 attempts / minute)
+    const ipRateLimit = await checkRateLimit(`login_ip_${ip}`, 10, 60 * 1000);
+    if (!ipRateLimit.allowed) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: `Çok fazla hatalı deneme yapıldı. Lütfen ${rateLimit.retryAfterSec} saniye sonra tekrar deneyin.` 
+        {
+          success: false,
+          message: `Çok fazla hatalı deneme yapıldı. Lütfen ${ipRateLimit.retryAfterSec} saniye sonra tekrar deneyin.`,
         },
         { status: 429 }
       );
     }
 
     const body = await req.json();
-    const { emailOrUsername, password } = body;
+
+    // 2. Payload size limit (20KB)
+    if (!enforcePayloadLimit(body, 20 * 1024)) {
+      return NextResponse.json(
+        { success: false, message: "İstek boyutu çok büyük." },
+        { status: 413 }
+      );
+    }
+
+    const { emailOrUsername, password, turnstileToken } = body;
+
+    // 3. Cloudflare Turnstile verification
+    const turnstileResult = await verifyTurnstileToken(turnstileToken, ip);
+    if (!turnstileResult.success) {
+      return NextResponse.json(
+        { success: false, message: turnstileResult.error || "Güvenlik doğrulaması başarısız." },
+        { status: 403 }
+      );
+    }
 
     if (!emailOrUsername || !password) {
       return NextResponse.json(
@@ -28,145 +55,113 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const cleanInput = sanitizeInput(emailOrUsername.trim().toLowerCase());
+    // Input length limits
+    if (String(emailOrUsername).length > 254 || String(password).length > 128) {
+      return NextResponse.json(
+        { success: false, message: "Geçersiz giriş bilgileri." },
+        { status: 400 }
+      );
+    }
+
+    const cleanInput = sanitizeInput(String(emailOrUsername).trim().toLowerCase());
     const pass = String(password);
+
+    // 4. Identifier-level rate limiting (prevent brute force on specific accounts)
+    const identifierRateLimit = await checkRateLimit(`login_id_${cleanInput}`, 5, 5 * 60 * 1000);
+    if (!identifierRateLimit.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: `Bu hesap için çok fazla hatalı deneme yapıldı. Lütfen ${identifierRateLimit.retryAfterSec} saniye sonra tekrar deneyin.`,
+        },
+        { status: 429 }
+      );
+    }
+
     const db = await fetchCloudDatabase();
-    const activeSiyahPass = db.adminPasswords?.siyah || "siyah2026heycoderz!";
-    const activeOykuPass = db.adminPasswords?.oyku || "oyku2026heycoderz!";
 
-    // 2. Check Admin: $ / Siyah (Timing-safe comparison)
-    if (
-      cleanInput === "siyah@heycoderz.com" || 
-      cleanInput === "siyah" || 
-      cleanInput === "@siyah" || 
-      cleanInput === "$" || 
-      cleanInput === "admin" ||
-      cleanInput === "admin@heycoderz.com"
-    ) {
-      if (secureCompare(pass, activeSiyahPass) || secureCompare(pass, "siyah2026heycoderz!")) {
-        const siyahUser = db.users.find(u => u.username === "siyah") || {
-          id: "admin-master",
-          name: "$",
-          username: "siyah",
-          email: "siyah@heycoderz.com",
-          role: "admin",
-          badge: "Kurucu & Admin",
-        };
-
-        const { password: _, ...safeUser } = siyahUser as any;
-        const response = NextResponse.json({
-          success: true,
-          user: safeUser,
-        });
-
-        // Set secure session cookie
-        response.cookies.set("heycoderz_session", "admin-siyah-auth", {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          maxAge: 60 * 60 * 24 * 7, // 7 days
-          path: "/",
-        });
-
-        return response;
-      } else {
-        return NextResponse.json(
-          { success: false, message: "Geçersiz kimlik bilgileri." },
-          { status: 401 }
-        );
-      }
-    }
-
-    // 3. Check Admin: Öykü (Timing-safe comparison)
-    if (
-      cleanInput === "oyku@heycoderz.com" || 
-      cleanInput === "oyku" || 
-      cleanInput === "@oyku" || 
-      cleanInput === "öykü"
-    ) {
-      if (
-        secureCompare(pass, activeOykuPass) || 
-        secureCompare(pass, "oyku2026heycoderz!") || 
-        secureCompare(pass, "oyku2026!")
-      ) {
-        const oykuUser = db.users.find(u => u.username === "oyku") || {
-          id: "admin-oyku",
-          name: "Öykü",
-          username: "oyku",
-          email: "oyku@heycoderz.com",
-          role: "admin",
-          badge: "Kurucu Ortak & Admin",
-        };
-
-        const { password: _, ...safeUser } = oykuUser as any;
-        const response = NextResponse.json({
-          success: true,
-          user: safeUser,
-        });
-
-        response.cookies.set("heycoderz_session", "admin-oyku-auth", {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          maxAge: 60 * 60 * 24 * 7,
-          path: "/",
-        });
-
-        return response;
-      } else {
-        return NextResponse.json(
-          { success: false, message: "Geçersiz kimlik bilgileri." },
-          { status: 401 }
-        );
-      }
-    }
-
-    // 4. Check Registered users in database
+    // 5. Find user in database (unified lookup for all users including admins)
     const registeredUser = db.users.find(
       (u) =>
         u.username.toLowerCase() === cleanInput ||
         (u.email && u.email.toLowerCase() === cleanInput)
     );
 
-    if (registeredUser) {
-      if (registeredUser.password && secureCompare(pass, registeredUser.password)) {
-        const { password: _, ...safeUser } = registeredUser as any;
-        const response = NextResponse.json({
-          success: true,
-          user: safeUser,
-        });
-
-        response.cookies.set("heycoderz_session", `user-${registeredUser.id}`, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          maxAge: 60 * 60 * 24 * 7,
-          path: "/",
-        });
-
-        return response;
-      } else {
-        return NextResponse.json(
-          { success: false, message: "Girdiğiniz şifre hatalı." },
-          { status: 401 }
-        );
+    // Also match admin aliases
+    const isAdminAlias =
+      cleanInput === "@siyah" || cleanInput === "$" || cleanInput === "admin" ||
+      cleanInput === "@oyku" || cleanInput === "öykü";
+    
+    let targetUser = registeredUser;
+    if (!targetUser && isAdminAlias) {
+      if (cleanInput === "@siyah" || cleanInput === "$" || cleanInput === "admin") {
+        targetUser = db.users.find((u) => u.username === "siyah");
+      } else if (cleanInput === "@oyku" || cleanInput === "öykü") {
+        targetUser = db.users.find((u) => u.username === "oyku");
       }
     }
 
-    // 5. Fallback standard developer login
-    return NextResponse.json({
+    if (!targetUser) {
+      // Timing equalization: run dummy password check to prevent user enumeration via response time
+      performDummyPasswordCheck();
+      return NextResponse.json(
+        { success: false, message: "Geçersiz kimlik bilgileri." },
+        { status: 401 }
+      );
+    }
+
+    // 6. Verify password (uses passwordHash with PBKDF2-SHA512)
+    const isPasswordValid = verifyPassword(pass, targetUser.passwordHash);
+
+    if (!isPasswordValid) {
+      await appendSecurityLog(targetUser.id, "LOGIN_FAILED", ip, "Hatalı şifre girişi.");
+      return NextResponse.json(
+        { success: false, message: "Geçersiz kimlik bilgileri." },
+        { status: 401 }
+      );
+    }
+
+    // 7. Ensure email_verified status is accurately reflected (defaults to false for unverified accounts)
+    const isEmailVerified = targetUser.email_verified === true;
+
+    // 8. Build safe user object (strip all sensitive fields)
+    const {
+      passwordHash: __,
+      verificationTokenHash: ___,
+      verificationTokenExpires: ____,
+      pendingEmailTokenHash: _____,
+      pendingEmailTokenExpires: ______,
+      ...rawSafeUser
+    } = targetUser as any;
+
+    const safeUser = {
+      ...rawSafeUser,
+      email_verified: isEmailVerified,
+    };
+
+    // Record login success event
+    await appendSecurityLog(targetUser.id, "LOGIN_SUCCESS", ip);
+
+    // 9. Create HMAC-signed session token
+    const sessionToken = createSessionToken(targetUser.id, targetUser.role);
+
+    const response = NextResponse.json({
       success: true,
-      user: {
-        id: "user-" + Date.now(),
-        name: cleanInput.includes("@") ? cleanInput.split("@")[0] : cleanInput,
-        username: cleanInput.includes("@") ? cleanInput.split("@")[0] : cleanInput,
-        email: cleanInput.includes("@") ? cleanInput : `${cleanInput}@heycoderz.com`,
-        role: "developer",
-        badge: "Geliştirici",
-      },
+      user: safeUser,
     });
 
+    // 10. Set secure session cookie
+    response.cookies.set("heycoderz_session", sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
+    });
+
+    return response;
   } catch (error: any) {
+    console.error("Login error:", error?.message);
     return NextResponse.json(
       { success: false, message: "Sunucu güvenlik hatası oluştu." },
       { status: 500 }
