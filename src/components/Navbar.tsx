@@ -7,21 +7,24 @@ import { Menu, X, ArrowRight, LogOut, LayoutDashboard, ShieldCheck, Globe, Setti
 import { useAuth } from "@/context/AuthContext";
 import { LanguageSelector } from "@/components/LanguageSelector";
 
-const mainNavItems = [
-  { id: "araclar", label: "Araçlar", href: "/araclar" },
-  { id: "playground", label: "Playground", href: "/playground" },
-  { id: "kaynaklar", label: "Kaynaklar", href: "/kaynaklar" },
-  { id: "topluluk", label: "Topluluk", href: "/topluluk" },
-  { id: "kesfet", label: "Keşfet", href: "/kesfet" },
-  { id: "blog", label: "Blog", href: "/blog" },
-  { id: "hakkimizda", label: "Hakkımızda", href: "/hakkimizda" },
-];
+import { useLanguage } from "@/context/LanguageContext";
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuth();
+  const { t } = useLanguage();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+
+  const mainNavItems = [
+    { id: "araclar", label: t("nav.tools"), href: "/araclar" },
+    { id: "playground", label: t("nav.playground"), href: "/playground" },
+    { id: "kaynaklar", label: t("nav.resources"), href: "/kaynaklar" },
+    { id: "topluluk", label: t("nav.community"), href: "/topluluk" },
+    { id: "kesfet", label: t("nav.explore"), href: "/kesfet" },
+    { id: "blog", label: t("nav.blog"), href: "/blog" },
+    { id: "hakkimizda", label: t("nav.about"), href: "/hakkimizda" },
+  ];
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#030303]/90 backdrop-blur-xl border-b border-white/[0.06] transition-all duration-300">
@@ -101,7 +104,7 @@ export const Navbar: React.FC = () => {
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-gray-300 hover:text-white hover:bg-purple-950/40 transition-colors"
                   >
                     <LayoutDashboard className="w-4 h-4 text-purple-400" />
-                    <span>Dashboard & Profil</span>
+                    <span>{t("nav.dashboard")}</span>
                   </Link>
 
                   <Link
@@ -110,7 +113,7 @@ export const Navbar: React.FC = () => {
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-gray-300 hover:text-white hover:bg-purple-950/40 transition-colors"
                   >
                     <Globe className="w-4 h-4 text-purple-400" />
-                    <span>Kamuya Açık Profil</span>
+                    <span>{t("nav.publicProfile")}</span>
                   </Link>
 
                   <Link
@@ -119,7 +122,7 @@ export const Navbar: React.FC = () => {
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-gray-300 hover:text-white hover:bg-purple-950/40 transition-colors"
                   >
                     <Settings className="w-4 h-4 text-purple-400" />
-                    <span>Ayarlar & Güvenlik</span>
+                    <span>{t("nav.settings")}</span>
                   </Link>
 
                   <button
@@ -131,7 +134,7 @@ export const Navbar: React.FC = () => {
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-950/30 transition-colors text-left cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Çıkış Yap</span>
+                    <span>{t("nav.logout")}</span>
                   </button>
                 </div>
               )}
@@ -142,13 +145,13 @@ export const Navbar: React.FC = () => {
                 href="/giris"
                 className="px-4 py-2 text-xs font-medium text-gray-300 hover:text-white bg-white/[0.03] hover:bg-white/[0.07] border border-white/10 hover:border-purple-500/30 rounded-xl transition-all duration-200 cursor-pointer"
               >
-                Giriş Yap
+                {t("nav.login")}
               </Link>
               <Link
                 href="/kayit"
                 className="px-4 py-2 text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 rounded-xl shadow-[0_0_15px_rgba(139,92,246,0.35)] transition-all duration-200 cursor-pointer"
               >
-                Üye Ol
+                {t("nav.register")}
               </Link>
             </>
           )}
@@ -204,7 +207,7 @@ export const Navbar: React.FC = () => {
                   className="w-full py-2.5 text-xs font-medium text-white bg-purple-600 rounded-xl flex items-center justify-center gap-2"
                 >
                   <LayoutDashboard className="w-4 h-4" />
-                  <span>Dashboard&apos;a Git</span>
+                  <span>{t("nav.dashboard")}</span>
                 </Link>
                 <Link
                   href="/ayarlar"
@@ -212,7 +215,7 @@ export const Navbar: React.FC = () => {
                   className="w-full py-2.5 text-xs font-medium text-gray-300 hover:text-white bg-white/[0.04] border border-white/10 rounded-xl flex items-center justify-center gap-2"
                 >
                   <Settings className="w-4 h-4 text-purple-400" />
-                  <span>Ayarlar & Güvenlik</span>
+                  <span>{t("nav.settings")}</span>
                 </Link>
                 <button
                   type="button"
@@ -222,7 +225,7 @@ export const Navbar: React.FC = () => {
                   }}
                   className="w-full py-2.5 text-xs font-medium text-red-400 bg-white/[0.04] border border-white/10 rounded-xl cursor-pointer"
                 >
-                  Çıkış Yap
+                  {t("nav.logout")}
                 </button>
               </>
             ) : (
@@ -232,14 +235,14 @@ export const Navbar: React.FC = () => {
                   onClick={() => setMobileMenuOpen(false)}
                   className="w-full py-2.5 text-xs font-medium text-center text-gray-300 hover:text-white bg-white/[0.04] border border-white/10 rounded-xl"
                 >
-                  Giriş Yap
+                  {t("nav.login")}
                 </Link>
                 <Link
                   href="/kayit"
                   onClick={() => setMobileMenuOpen(false)}
                   className="w-full py-2.5 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl shadow-lg flex items-center justify-center gap-2"
                 >
-                  <span>Üye Ol</span>
+                  <span>{t("nav.register")}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </>
