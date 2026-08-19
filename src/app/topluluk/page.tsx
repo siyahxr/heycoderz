@@ -23,7 +23,7 @@ import { useCommunity, formatTimeAgo } from "@/context/CommunityContext";
 
 export default function CommunityPage() {
   const { user } = useAuth();
-  const { posts, createPost, addComment, toggleLike, deletePost, toggleAcceptSolution } = useCommunity();
+  const { posts, createPost, addComment, toggleLike, deletePost } = useCommunity();
 
   const [selectedTag, setSelectedTag] = useState("all");
   const [newTitle, setNewTitle] = useState("");
@@ -82,66 +82,108 @@ export default function CommunityPage() {
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
             Geliştirici{" "}
             <span className="bg-gradient-to-r from-purple-400 via-purple-500 to-indigo-400 bg-clip-text text-transparent">
-              Topluluğu & Tartışmalar
+              Tartışma & Paylaşım
             </span>
           </h1>
           <p className="text-xs sm:text-sm text-gray-400">
-            Sorular sorun, çözümleri sabitleyin, mimarileri tartışın ve kod parçacıkları paylaşın.
+            Sorularınızı sorun, geliştirdiğiniz araçları tanıtın veya diğer yazılımcılarla fikir alışverişi yapın.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Main Feed Column (8 Cols) */}
-          <div className="lg:col-span-8 space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
             
-            {/* Create Post Box */}
-            <div className="p-6 rounded-3xl bg-[#08080E]/90 border border-purple-500/30 shadow-[0_0_30px_rgba(139,92,246,0.15)] space-y-4 backdrop-blur-xl">
-              <div className="flex items-center gap-2 text-xs font-mono text-purple-400">
-                <Sparkles className="w-4 h-4" />
-                <span>Yeni Tartışma veya Soru Başlat</span>
+            {/* Create Post Card */}
+            <div className="p-6 rounded-3xl bg-[#09090F]/95 border border-purple-500/30 shadow-[0_15px_40px_rgba(0,0,0,0.7),0_0_20px_rgba(139,92,246,0.15)]">
+              <div className="flex items-center gap-3 mb-4">
+                <Link
+                  href={user ? `/@${user.username.replace(/^@/, "")}` : "/giris"}
+                  className="flex items-center gap-3 group/create-author cursor-pointer"
+                >
+                  <img
+                    src={user?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80"}
+                    alt={user?.name || "Dev"}
+                    className="w-10 h-10 rounded-xl object-cover border border-purple-500/30 group-hover/create-author:border-purple-400 transition-colors"
+                  />
+                  <div>
+                    <h3 className="text-sm font-bold text-white group-hover/create-author:text-purple-300 transition-colors flex items-center gap-2">
+                      <span>{user ? user.name : "Toplulukta Paylaşım Yap"}</span>
+                      {user?.role === "admin" && (
+                        <ShieldCheck className="w-3.5 h-3.5 text-purple-400" />
+                      )}
+                    </h3>
+                    <p className="text-[11px] text-gray-400">
+                      {user ? `@${user.username}` : "Giriş yapmadan da hızlıca soru veya fikir paylaşabilirsiniz"}
+                    </p>
+                  </div>
+                </Link>
               </div>
 
-              <form onSubmit={handleCreatePost} className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Başlık (Örn: Next.js 16 Server Actions ile WebSocket bağlantısı nasıl yapılır?)"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500 transition-colors"
-                />
+              <form onSubmit={handleCreatePost} className="space-y-3.5">
+                <div>
+                  <input
+                    type="text"
+                    required
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="Bir başlık yazın (Örn: Next.js 16 Server Actions hakkında düşünceleriniz?)"
+                    className="w-full bg-black/60 border border-white/10 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white placeholder-gray-500 outline-none transition-all"
+                  />
+                </div>
 
-                <textarea
-                  rows={4}
-                  placeholder="Detaylı açıklama yazın... (Markdown veya soru detayları)"
-                  value={newBody}
-                  onChange={(e) => setNewBody(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-xs sm:text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500 transition-colors resize-none leading-relaxed"
-                />
+                <div>
+                  <textarea
+                    rows={3}
+                    required
+                    value={newBody}
+                    onChange={(e) => setNewBody(e.target.value)}
+                    placeholder="Detayları, sorunuzu veya açıklamanızı yazın..."
+                    className="w-full bg-black/60 border border-white/10 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 rounded-xl p-4 text-xs sm:text-sm text-white placeholder-gray-500 outline-none transition-all resize-none"
+                  />
+                </div>
 
-                {/* Optional Code Input */}
+                {/* Optional Code Input Box */}
                 {showCodeInput && (
                   <div className="space-y-1.5 animate-in fade-in">
-                    <label className="text-[11px] font-mono text-purple-300 flex items-center gap-1.5">
-                      <Code2 className="w-3.5 h-3.5" />
-                      Kod Bloğu (Opsiyonel):
-                    </label>
+                    <div className="flex items-center justify-between text-[11px] text-gray-400 font-mono">
+                      <span>Kod Parçacığı (İsteğe bağlı):</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowCodeInput(false)}
+                        className="text-red-400 hover:underline cursor-pointer"
+                      >
+                        Kaldır
+                      </button>
+                    </div>
                     <textarea
-                      rows={5}
-                      placeholder="// Kod parçacığınızı buraya yapıştırın..."
+                      rows={4}
                       value={newCode}
                       onChange={(e) => setNewCode(e.target.value)}
-                      className="w-full bg-black/70 border border-purple-500/30 rounded-2xl p-3.5 text-xs font-mono text-emerald-400 placeholder-gray-600 outline-none focus:border-purple-500 transition-colors resize-none"
+                      placeholder="// Kodunuzu buraya yapıştırın..."
+                      className="w-full bg-black/80 border border-purple-500/30 focus:border-purple-500 rounded-xl p-3 font-mono text-xs text-emerald-400 outline-none resize-none"
                     />
                   </div>
                 )}
 
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                {/* Form Toolbar */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
                   <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowCodeInput(!showCodeInput)}
+                      className={`px-3 py-1.5 rounded-xl border text-xs font-mono flex items-center gap-1.5 transition-all cursor-pointer ${
+                        showCodeInput
+                          ? "bg-purple-950/60 border-purple-500/50 text-purple-300"
+                          : "bg-white/[0.03] border-white/10 text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      <Code2 className="w-3.5 h-3.5" />
+                      <span>{showCodeInput ? "Kod Alanı Açık" : "Kod Ekle"}</span>
+                    </button>
+
                     <select
                       value={newTag}
                       onChange={(e) => setNewTag(e.target.value)}
-                      className="bg-black/50 border border-white/10 rounded-xl px-3 py-2 text-xs text-purple-300 font-mono outline-none focus:border-purple-500 cursor-pointer"
+                      className="bg-black/60 border border-white/10 text-xs text-purple-300 rounded-xl px-3 py-1.5 outline-none cursor-pointer"
                     >
                       <option value="Genel">Genel</option>
                       <option value="Soru & Cevap">Soru & Cevap</option>
@@ -149,25 +191,12 @@ export default function CommunityPage() {
                       <option value="İpuçları">İpuçları</option>
                       <option value="Duyuru">Duyuru</option>
                     </select>
-
-                    <button
-                      type="button"
-                      onClick={() => setShowCodeInput(!showCodeInput)}
-                      className={`px-3 py-2 rounded-xl text-xs font-mono flex items-center gap-1.5 transition-colors cursor-pointer border ${
-                        showCodeInput
-                          ? "bg-purple-950/60 border-purple-500/50 text-purple-300"
-                          : "bg-white/[0.03] border-white/10 text-gray-400 hover:text-white"
-                      }`}
-                    >
-                      <Code2 className="w-3.5 h-3.5" />
-                      <span>{showCodeInput ? "Kodu Kapat" : "Kod Ekle"}</span>
-                    </button>
                   </div>
 
                   <button
                     type="submit"
                     disabled={isPosting || !newTitle.trim() || !newBody.trim()}
-                    className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-[0_0_15px_rgba(139,92,246,0.3)] flex items-center gap-2 cursor-pointer transition-all"
+                    className="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-[0_0_15px_rgba(139,92,246,0.35)] flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>{isPosting ? "Yayınlanıyor..." : "Anında Yayınla"}</span>
@@ -206,7 +235,6 @@ export default function CommunityPage() {
                 filteredPosts.map((post) => {
                   const isLiked = user && post.likedByUserIds.includes(user.id);
                   const isCommentsOpen = openCommentsPostId === post.id;
-                  const isAuthorOrAdmin = user && (user.id === post.authorId || user.role === "admin");
 
                   return (
                     <div
@@ -245,11 +273,6 @@ export default function CommunityPage() {
                         </Link>
 
                         <div className="flex items-center gap-2">
-                          {post.isSolved && (
-                            <span className="px-2.5 py-0.5 rounded-full bg-green-500/20 border border-green-500/40 text-green-300 text-[11px] font-mono font-bold flex items-center gap-1 shadow-[0_0_10px_rgba(34,197,94,0.25)]">
-                              ✓ Çözüldü
-                            </span>
-                          )}
                           <span className="text-xs px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/5 text-gray-400 font-mono">
                             {post.tag}
                           </span>
@@ -329,58 +352,26 @@ export default function CommunityPage() {
                         <div className="mt-4 pt-4 border-t border-white/[0.06] space-y-4 animate-in fade-in">
                           {post.comments.length > 0 ? (
                             <div className="space-y-3">
-                              {post.comments.map((c) => {
-                                const isAccepted = post.acceptedCommentId === c.id;
-
-                                return (
-                                  <div
-                                    key={c.id}
-                                    className={`p-3.5 rounded-2xl space-y-2 transition-all ${
-                                      isAccepted
-                                        ? "bg-green-950/20 border-2 border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.2)]"
-                                        : "bg-black/50 border border-white/[0.05]"
-                                    }`}
-                                  >
-                                    <div className="flex items-center justify-between text-xs">
-                                      <Link
-                                        href={`/@${c.authorUsername.replace(/^@/, "")}`}
-                                        className="flex items-center gap-2 group/commenter cursor-pointer"
-                                      >
-                                        <img
-                                          src={c.authorAvatar}
-                                          alt={c.authorName}
-                                          className="w-6 h-6 rounded-full object-cover border border-white/10 group-hover/commenter:border-purple-400 transition-colors"
-                                        />
-                                        <span className="font-bold text-white group-hover/commenter:text-purple-300 transition-colors">{c.authorName}</span>
-                                        <span className="text-[10px] text-gray-500 font-mono group-hover/commenter:text-purple-400 transition-colors">@{c.authorUsername}</span>
-                                      </Link>
-
-                                      <div className="flex items-center gap-2">
-                                        {isAccepted && (
-                                          <span className="px-2 py-0.5 rounded bg-green-500/20 text-green-300 font-mono text-[10px] font-bold">
-                                            👑 En İyi Çözüm
-                                          </span>
-                                        )}
-                                        {isAuthorOrAdmin && (
-                                          <button
-                                            type="button"
-                                            onClick={() => toggleAcceptSolution(post.id, c.id)}
-                                            className={`px-2 py-0.5 rounded text-[10px] font-mono cursor-pointer transition-colors ${
-                                              isAccepted
-                                                ? "bg-red-500/20 text-red-300 hover:bg-red-500/30"
-                                                : "bg-green-500/10 hover:bg-green-500/20 text-green-300 border border-green-500/30"
-                                            }`}
-                                          >
-                                            {isAccepted ? "Çözümü Kaldır" : "✓ Çözüm Olarak Seç"}
-                                          </button>
-                                        )}
-                                        <span className="text-[10px] text-gray-500 font-mono">{formatTimeAgo(c.createdAt)}</span>
-                                      </div>
-                                    </div>
-                                    <p className="text-xs text-gray-300 pl-8 leading-relaxed">{c.body}</p>
+                              {post.comments.map((c) => (
+                                <div key={c.id} className="p-3.5 rounded-2xl bg-black/50 border border-white/[0.05] space-y-1.5">
+                                  <div className="flex items-center justify-between text-xs">
+                                    <Link
+                                      href={`/@${c.authorUsername.replace(/^@/, "")}`}
+                                      className="flex items-center gap-2 group/commenter cursor-pointer"
+                                    >
+                                      <img
+                                        src={c.authorAvatar}
+                                        alt={c.authorName}
+                                        className="w-6 h-6 rounded-full object-cover border border-white/10 group-hover/commenter:border-purple-400 transition-colors"
+                                      />
+                                      <span className="font-bold text-white group-hover/commenter:text-purple-300 transition-colors">{c.authorName}</span>
+                                      <span className="text-[10px] text-gray-500 font-mono group-hover/commenter:text-purple-400 transition-colors">@{c.authorUsername}</span>
+                                    </Link>
+                                    <span className="text-[10px] text-gray-500 font-mono">{formatTimeAgo(c.createdAt)}</span>
                                   </div>
-                                );
-                              })}
+                                  <p className="text-xs text-gray-300 pl-8">{c.body}</p>
+                                </div>
+                              ))}
                             </div>
                           ) : (
                             <p className="text-xs text-gray-500 font-mono text-center py-2">
@@ -388,11 +379,11 @@ export default function CommunityPage() {
                             </p>
                           )}
 
-                          {/* Add Comment Box */}
-                          <div className="flex gap-2 pt-2">
+                          {/* Add comment input */}
+                          <div className="flex items-center gap-2 pt-2">
                             <input
                               type="text"
-                              placeholder="Yorumunu veya çözüm önerini yaz..."
+                              placeholder="Bir yanıt veya yorum yaz..."
                               value={commentInputs[post.id] || ""}
                               onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
                               onKeyDown={(e) => {
@@ -419,43 +410,6 @@ export default function CommunityPage() {
               )}
             </div>
           </div>
-
-          {/* Right Sidebar Column (4 Cols) */}
-          <div className="lg:col-span-4 space-y-6">
-            
-            {/* Solved Q&A Guidelines */}
-            <div className="p-6 rounded-3xl bg-[#08080E]/90 border border-purple-500/20 space-y-3">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-purple-400" />
-                Soru & Cevap Rehberi
-              </h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                Sorunuz yanıtlandığında veya en iyi çözümü bulduğunuzda, ilgili yorumun yanındaki <strong>&quot;✓ Çözüm Olarak Seç&quot;</strong> butonuna tıklayarak diğer geliştiricilere rehberlik edin.
-              </p>
-            </div>
-
-            {/* Quick Links */}
-            <div className="p-6 rounded-3xl bg-[#08080E]/90 border border-white/[0.08] space-y-3">
-              <h3 className="text-sm font-bold text-white">Faydalı Alanlar</h3>
-              <div className="space-y-2 text-xs">
-                <Link href="/snippetler" className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] hover:bg-purple-500/10 text-gray-300 hover:text-purple-300 transition-colors">
-                  <span>Hazır Kod & Snippet Deposu</span>
-                  <span className="text-purple-400 font-mono">→</span>
-                </Link>
-                <Link href="/duello" className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] hover:bg-purple-500/10 text-gray-300 hover:text-purple-300 transition-colors">
-                  <span>1v1 Kod Düelloları</span>
-                  <span className="text-purple-400 font-mono">→</span>
-                </Link>
-                <Link href="/lounge" className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] hover:bg-purple-500/10 text-gray-300 hover:text-purple-300 transition-colors">
-                  <span>Dev Lounge (Lo-Fi & Co-Working)</span>
-                  <span className="text-purple-400 font-mono">→</span>
-                </Link>
-              </div>
-            </div>
-
-          </div>
-
-        </div>
 
       </main>
 

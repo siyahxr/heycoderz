@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { BackgroundEffects } from "@/components/BackgroundEffects";
@@ -13,14 +12,11 @@ import {
   Sparkles, 
   ThumbsUp, 
   Layers, 
-  Search, 
-  CheckCircle2, 
-  X, 
-  Globe, 
-  FolderGit2, 
-  Trophy, 
-  Star,
-  Award
+  Search,
+  CheckCircle2,
+  X,
+  Globe,
+  FolderGit2
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
@@ -42,16 +38,16 @@ export interface ShowcaseProject {
 const INITIAL_PROJECTS: ShowcaseProject[] = [
   {
     id: "proj-1",
-    authorName: "$",
-    authorUsername: "siyah",
+    authorName: "Efe Taşkın",
+    authorUsername: "efe",
     title: "heycoderz Platform",
     tagline: "Geliştiriciler için hepsi bir arada açık kaynak ekosistem",
-    description: "Next.js 16, React 19, TypeScript ve Tailwind CSS v4 ile inşa edilmiş ultra hızlı geliştirici üretkenlik platformu, 1v1 düellolar ve interaktif araç kiti.",
+    description: "Next.js 16, React 19, TypeScript ve Tailwind CSS v4 ile inşa edilmiş ultra hızlı geliştirici üretkenlik platformu.",
     demoUrl: "https://heycoderz.com",
     githubUrl: "https://github.com/heycoderz",
     tags: ["Next.js 16", "React 19", "TypeScript", "Tailwind CSS"],
-    upvotes: 64,
-    upvotedByUserIds: ["admin-master", "user-1", "user-2"],
+    upvotes: 48,
+    upvotedByUserIds: ["admin-master"],
     createdAt: "Yeni",
   },
   {
@@ -64,23 +60,9 @@ const INITIAL_PROJECTS: ShowcaseProject[] = [
     demoUrl: "https://heycoderz.com",
     githubUrl: "https://github.com/heycoderz",
     tags: ["UI/UX", "Tailwind CSS", "Figma", "React"],
-    upvotes: 48,
-    upvotedByUserIds: ["admin-oyku"],
-    createdAt: "Yeni",
-  },
-  {
-    id: "proj-3",
-    authorName: "Caner",
-    authorUsername: "caner_dev",
-    title: "DevMetrics CLI",
-    tagline: "Terminal tabanlı Docker ve API izleme aracı",
-    description: "Go ve Rust tabanlı, anlık CPU, RAM ve mikroservis yanıt sürelerini terminalde görselleştiren açık kaynak CLI.",
-    demoUrl: "https://github.com/heycoderz",
-    githubUrl: "https://github.com/heycoderz",
-    tags: ["Go", "Rust", "CLI", "Docker", "DevOps"],
-    upvotes: 31,
+    upvotes: 36,
     upvotedByUserIds: [],
-    createdAt: "Bu Hafta",
+    createdAt: "Yeni",
   },
 ];
 
@@ -88,7 +70,6 @@ export default function ShowcasePage() {
   const { user } = useAuth();
   const [projects, setProjects] = useState<ShowcaseProject[]>(INITIAL_PROJECTS);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"trending" | "top" | "new">("trending");
   const [modalOpen, setModalOpen] = useState(false);
 
   // Form states
@@ -163,18 +144,7 @@ export default function ShowcasePage() {
     setNewGithub("");
   };
 
-  // Top project of the week (highest upvote)
-  const spotlightProject = [...projects].sort((a, b) => b.upvotes - a.upvotes)[0];
-
-  // Sorting
-  const sortedProjects = [...projects].sort((a, b) => {
-    if (activeTab === "trending" || activeTab === "top") {
-      return b.upvotes - a.upvotes;
-    }
-    return 0; // "new" preserves insertion order
-  });
-
-  const filtered = sortedProjects.filter((p) =>
+  const filtered = projects.filter((p) =>
     p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.tagline.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -185,13 +155,13 @@ export default function ShowcasePage() {
       <BackgroundEffects />
       <Navbar />
 
-      <main className="relative z-10 flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full space-y-10">
+      <main className="relative z-10 flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full">
         
         {/* Header Banner */}
-        <div className="text-center max-w-3xl mx-auto space-y-3">
+        <div className="text-center max-w-3xl mx-auto mb-10 space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/40 border border-purple-500/30 text-xs font-medium text-purple-300 shadow-[0_0_15px_rgba(139,92,246,0.2)]">
             <Rocket className="w-3.5 h-3.5" />
-            <span>heycoderz Project Showcase & Upvotes</span>
+            <span>heycoderz Project Showcase</span>
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
             Geliştirici{" "}
@@ -200,131 +170,31 @@ export default function ShowcasePage() {
             </span>
           </h1>
           <p className="text-xs sm:text-sm text-gray-400">
-            Açık kaynak projelerinizi ve SaaS ürünlerinizi sergileyin, Product Hunt tarzı upvote toplayarak haftanın projesi olun.
+            Açık kaynak projelerinizi, SaaS ürünlerinizi ve araçlarınızı sergileyin, topluluktan oy ve geri bildirim toplayın.
           </p>
         </div>
 
-        {/* SPOTLIGHT: Haftanın 1.si Proje Kartı */}
-        {spotlightProject && (
-          <div className="relative rounded-3xl p-0.5 bg-gradient-to-r from-amber-500 via-purple-500 to-indigo-500 shadow-[0_0_40px_rgba(245,158,11,0.25)]">
-            <div className="p-6 sm:p-8 rounded-[23px] bg-[#09090F]/95 backdrop-blur-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="space-y-2 max-w-3xl">
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold flex items-center gap-1.5 shadow-[0_0_10px_rgba(245,158,11,0.3)]">
-                    <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                    👑 HAFTANIN 1. PROJESİ (SPOTLIGHT)
-                  </span>
-                  <span className="text-xs text-gray-400 font-mono">
-                    @{spotlightProject.authorUsername}
-                  </span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-                  {spotlightProject.title}
-                </h2>
-                <p className="text-sm text-purple-300 font-medium">{spotlightProject.tagline}</p>
-                <p className="text-xs sm:text-sm text-gray-400 leading-relaxed">{spotlightProject.description}</p>
-                
-                <div className="flex flex-wrap gap-1.5 pt-2">
-                  {spotlightProject.tags.map((t) => (
-                    <span key={t} className="px-2.5 py-0.5 rounded-lg bg-white/5 border border-white/10 text-[11px] font-mono text-purple-200">
-                      #{t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Upvote & Action */}
-              <div className="flex flex-col sm:flex-row md:flex-col items-center gap-3 shrink-0 w-full md:w-auto">
-                <button
-                  type="button"
-                  onClick={() => handleUpvote(spotlightProject.id)}
-                  className="w-full md:w-32 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/30 cursor-pointer transition-all hover:scale-105"
-                >
-                  <ThumbsUp className="w-4 h-4 fill-white" />
-                  <span>{spotlightProject.upvotes} Upvote</span>
-                </button>
-
-                {spotlightProject.demoUrl && (
-                  <a
-                    href={spotlightProject.demoUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full md:w-32 py-2 rounded-2xl bg-white/5 hover:bg-white/10 text-white text-xs font-semibold flex items-center justify-center gap-1.5 border border-white/10"
-                  >
-                    <Globe className="w-3.5 h-3.5 text-purple-400" />
-                    Canlı Demo
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Action & Filter Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-          
-          {/* Sorting Tabs */}
-          <div className="flex items-center gap-2 bg-black/40 p-1.5 rounded-2xl border border-white/10">
-            <button
-              type="button"
-              onClick={() => setActiveTab("trending")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all ${
-                activeTab === "trending"
-                  ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <Flame className="w-3.5 h-3.5 text-orange-400" />
-              Haftanın Trendleri
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("top")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all ${
-                activeTab === "top"
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <Star className="w-3.5 h-3.5 text-amber-400" />
-              En Çok Oy Alanlar
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("new")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all ${
-                activeTab === "new"
-                  ? "bg-sky-600 text-white shadow-lg shadow-sky-600/30"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-              En Yeniler
-            </button>
+        {/* Action & Search Bar */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-8">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Projelerde veya etiketlerde ara..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-[#08080E]/90 border border-white/10 rounded-2xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-gray-500 outline-none focus:border-purple-500"
+            />
           </div>
 
-          {/* Search & Add */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="w-4 h-4 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Projelerde ara..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#08080E]/90 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder-gray-500 outline-none focus:border-purple-500"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-[0_0_20px_rgba(139,92,246,0.35)] flex items-center justify-center gap-1.5 cursor-pointer transition-all shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Proje Ekle</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-2xl text-xs font-semibold shadow-[0_0_20px_rgba(139,92,246,0.35)] flex items-center justify-center gap-2 cursor-pointer transition-all"
+          >
+            <Plus className="w-4 h-4" />
+            <span>+ Kendi Projeni Ekle</span>
+          </button>
         </div>
 
         {/* Projects Grid */}
@@ -335,7 +205,7 @@ export default function ShowcasePage() {
             return (
               <div
                 key={proj.id}
-                className="p-6 sm:p-7 rounded-3xl bg-[#08080E]/90 border border-white/[0.08] hover:border-purple-500/40 transition-all duration-300 flex flex-col justify-between shadow-xl"
+                className="p-6 sm:p-7 rounded-3xl bg-[#08080E]/90 border border-white/[0.08] hover:border-purple-500/40 transition-all duration-300 flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-start justify-between gap-4 mb-3">
@@ -351,7 +221,7 @@ export default function ShowcasePage() {
                       className={`px-3.5 py-2 rounded-2xl border flex items-center gap-1.5 font-mono text-xs transition-all cursor-pointer ${
                         isUpvoted
                           ? "bg-purple-600 text-white border-purple-400 shadow-[0_0_15px_rgba(139,92,246,0.4)]"
-                          : "bg-white/[0.03] border-white/10 text-gray-300 hover:border-purple-500/40 hover:bg-white/5"
+                          : "bg-white/[0.03] border-white/10 text-gray-300 hover:border-purple-500/40"
                       }`}
                     >
                       <ThumbsUp className={`w-3.5 h-3.5 ${isUpvoted ? "fill-white" : ""}`} />
@@ -378,12 +248,7 @@ export default function ShowcasePage() {
                 <div className="pt-4 border-t border-white/[0.04] flex items-center justify-between text-xs text-gray-500">
                   <div className="flex items-center gap-1.5">
                     <span>Geliştirici:</span>
-                    <Link
-                      href={`/${proj.authorUsername}`}
-                      className="text-white hover:text-purple-400 font-medium transition-colors"
-                    >
-                      @{proj.authorUsername}
-                    </Link>
+                    <span className="font-bold text-white">@{proj.authorUsername}</span>
                   </div>
 
                   <div className="flex items-center gap-3">
@@ -392,7 +257,7 @@ export default function ShowcasePage() {
                         href={proj.githubUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-gray-400 hover:text-white flex items-center gap-1 transition-colors"
+                        className="text-gray-400 hover:text-white flex items-center gap-1"
                       >
                         <FolderGit2 className="w-3.5 h-3.5" />
                         <span>GitHub</span>
@@ -403,10 +268,10 @@ export default function ShowcasePage() {
                         href={proj.demoUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-purple-400 hover:text-purple-300 flex items-center gap-1 transition-colors font-medium"
+                        className="text-purple-400 hover:text-purple-300 flex items-center gap-1 font-semibold"
                       >
-                        <Globe className="w-3.5 h-3.5" />
                         <span>Canlı Demo</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     )}
                   </div>
@@ -416,115 +281,116 @@ export default function ShowcasePage() {
           })}
         </div>
 
-      </main>
-
-      {/* New Project Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
-          <div className="w-full max-w-xl rounded-3xl bg-[#09090F] border border-purple-500/30 p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Rocket className="w-4 h-4 text-purple-400" />
-                Vitrinde Yeni Proje Yayınla
-              </h3>
+        {/* Modal: Add New Project */}
+        {modalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className="relative w-full max-w-xl bg-[#09090F] border border-purple-500/30 rounded-3xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto shadow-2xl space-y-5">
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="p-1 rounded-lg text-gray-400 hover:text-white cursor-pointer"
+                className="absolute top-6 right-6 text-gray-400 hover:text-white p-1"
               >
                 <X className="w-5 h-5" />
               </button>
+
+              <div className="flex items-center gap-2 text-purple-400 text-xs font-mono">
+                <Rocket className="w-4 h-4" />
+                <span>heycoderz Vitrinine Proje Ekle</span>
+              </div>
+
+              <h2 className="text-xl font-bold text-white">Projenizi Tanıtın</h2>
+
+              <form onSubmit={handleCreateProject} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">Proje Başlığı</label>
+                  <input
+                    type="text"
+                    required
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="Örn: NextAuth Starter Kit"
+                    className="w-full bg-black/60 border border-white/10 focus:border-purple-500 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">Kısa Slogan (Tagline)</label>
+                  <input
+                    type="text"
+                    required
+                    value={newTagline}
+                    onChange={(e) => setNewTagline(e.target.value)}
+                    placeholder="Örn: Next.js 16 için hazır kimlik doğrulama şablonu"
+                    className="w-full bg-black/60 border border-white/10 focus:border-purple-500 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-white outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">Detaylı Açıklama</label>
+                  <textarea
+                    rows={3}
+                    value={newDesc}
+                    onChange={(e) => setNewDesc(e.target.value)}
+                    placeholder="Projenin temel özellikleri ve ne işe yaradığı..."
+                    className="w-full bg-black/60 border border-white/10 focus:border-purple-500 rounded-xl p-4 text-xs sm:text-sm text-white outline-none resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">Canlı Demo URL</label>
+                    <input
+                      type="url"
+                      value={newDemo}
+                      onChange={(e) => setNewDemo(e.target.value)}
+                      placeholder="https://projeniz.com"
+                      className="w-full bg-black/60 border border-white/10 focus:border-purple-500 rounded-xl px-4 py-2.5 text-xs font-mono text-white outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-300 mb-1">GitHub Repo URL</label>
+                    <input
+                      type="url"
+                      value={newGithub}
+                      onChange={(e) => setNewGithub(e.target.value)}
+                      placeholder="https://github.com/username/repo"
+                      className="w-full bg-black/60 border border-white/10 focus:border-purple-500 rounded-xl px-4 py-2.5 text-xs font-mono text-white outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1">Teknolojiler (Virgülle ayırın)</label>
+                  <input
+                    type="text"
+                    value={newTags}
+                    onChange={(e) => setNewTags(e.target.value)}
+                    placeholder="Next.js, TypeScript, Tailwind, PostgreSQL"
+                    className="w-full bg-black/60 border border-white/10 focus:border-purple-500 rounded-xl px-4 py-2.5 text-xs font-mono text-white outline-none"
+                  />
+                </div>
+
+                <div className="pt-2 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl bg-white/[0.04] text-xs text-gray-300"
+                  >
+                    Vazgeç
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold shadow-lg"
+                  >
+                    Vitrine Ekle & Yayınla
+                  </button>
+                </div>
+              </form>
             </div>
-
-            <form onSubmit={handleCreateProject} className="space-y-3.5">
-              <div>
-                <label className="block text-xs text-gray-400 mb-1 font-mono">Proje Adı</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Örn: Aura UI"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-black/50 border border-white/10 text-white text-xs focus:outline-none focus:border-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-400 mb-1 font-mono">Kısa Başlık / Slogan (Tagline)</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Örn: Fütüristik koyu tema React bileşen kütüphanesi"
-                  value={newTagline}
-                  onChange={(e) => setNewTagline(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-black/50 border border-white/10 text-white text-xs focus:outline-none focus:border-purple-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-400 mb-1 font-mono">Açıklama</label>
-                <textarea
-                  rows={3}
-                  placeholder="Projeniz ne işe yarıyor, hangi teknolojileri kullandınız?"
-                  value={newDesc}
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  className="w-full p-3 rounded-xl bg-black/50 border border-white/10 text-white text-xs focus:outline-none focus:border-purple-500 resize-none leading-relaxed"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1 font-mono">Demo URL</label>
-                  <input
-                    type="url"
-                    placeholder="https://..."
-                    value={newDemo}
-                    onChange={(e) => setNewDemo(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-black/50 border border-white/10 text-white text-xs focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1 font-mono">GitHub Repo URL</label>
-                  <input
-                    type="url"
-                    placeholder="https://github.com/..."
-                    value={newGithub}
-                    onChange={(e) => setNewGithub(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl bg-black/50 border border-white/10 text-white text-xs focus:outline-none focus:border-purple-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-400 mb-1 font-mono">Etiketler (Virgülle ayırın)</label>
-                <input
-                  type="text"
-                  placeholder="React, Next.js, Tailwind, TypeScript"
-                  value={newTags}
-                  onChange={(e) => setNewTags(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-black/50 border border-white/10 text-white text-xs focus:outline-none focus:border-purple-500"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-white cursor-pointer"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-lg shadow-purple-600/30 cursor-pointer"
-                >
-                  Vitrinde Yayınla
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+        )}
+
+      </main>
 
       <Footer />
     </div>

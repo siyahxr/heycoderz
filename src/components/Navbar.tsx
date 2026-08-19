@@ -3,33 +3,18 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  Menu, 
-  X, 
-  ArrowRight, 
-  LogOut, 
-  LayoutDashboard, 
-  ShieldCheck, 
-  Globe, 
-  Settings, 
-  MessageSquare,
-  Swords,
-  Headphones,
-  Code2
-} from "lucide-react";
+import { Menu, X, ArrowRight, LogOut, LayoutDashboard, ShieldCheck, Globe, Settings } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { LanguageSelector } from "@/components/LanguageSelector";
-import { DirectMessageDrawer } from "@/components/DirectMessageDrawer";
 
 const mainNavItems = [
   { id: "araclar", label: "Araçlar", href: "/araclar" },
-  { id: "snippetler", label: "Snippet'lar", href: "/snippetler" },
-  { id: "lounge", label: "Dev Lounge", href: "/lounge" },
-  { id: "duello", label: "Düello", href: "/duello" },
-  { id: "vitrin", label: "Vitrin", href: "/vitrin" },
-  { id: "topluluk", label: "Topluluk", href: "/topluluk" },
-  { id: "gorevler", label: "Görevler", href: "/gorevler" },
   { id: "playground", label: "Playground", href: "/playground" },
+  { id: "kaynaklar", label: "Kaynaklar", href: "/kaynaklar" },
+  { id: "topluluk", label: "Topluluk", href: "/topluluk" },
+  { id: "kesfet", label: "Keşfet", href: "/kesfet" },
+  { id: "blog", label: "Blog", href: "/blog" },
+  { id: "hakkimizda", label: "Hakkımızda", href: "/hakkimizda" },
 ];
 
 export const Navbar: React.FC = () => {
@@ -37,7 +22,6 @@ export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const [dmDrawerOpen, setDmDrawerOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#030303]/90 backdrop-blur-xl border-b border-white/[0.06] transition-all duration-300">
@@ -62,14 +46,14 @@ export const Navbar: React.FC = () => {
         </Link>
 
         {/* Center: Navigation Links (Desktop) */}
-        <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
+        <nav className="hidden md:flex items-center gap-8 lg:gap-10">
           {mainNavItems.map((item) => {
             const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
             return (
               <Link
                 key={item.id}
                 href={item.href}
-                className={`text-[14px] font-medium transition-all duration-200 relative py-1 cursor-pointer whitespace-nowrap ${
+                className={`text-[15px] font-medium transition-all duration-200 relative py-1 cursor-pointer ${
                   isActive
                     ? "text-purple-400 font-semibold"
                     : "text-gray-400 hover:text-white"
@@ -86,17 +70,6 @@ export const Navbar: React.FC = () => {
 
         {/* Right: Actions & Auth Area */}
         <div className="hidden md:flex items-center gap-3">
-          {/* Quick DM Trigger */}
-          <button
-            type="button"
-            onClick={() => setDmDrawerOpen(true)}
-            className="p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/10 hover:border-purple-500/30 text-gray-300 hover:text-purple-300 transition-all cursor-pointer relative"
-            title="Geliştirici Mesajlaşma (DM)"
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span className="w-2 h-2 rounded-full bg-purple-500 absolute top-1.5 right-1.5 ring-2 ring-black" />
-          </button>
-
           {/* Language Switcher */}
           <LanguageSelector />
 
@@ -183,13 +156,6 @@ export const Navbar: React.FC = () => {
 
         {/* Mobile Hamburger Button */}
         <div className="flex md:hidden items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setDmDrawerOpen(true)}
-            className="p-2 rounded-xl text-gray-400 hover:text-white bg-white/[0.05] border border-white/10"
-          >
-            <MessageSquare className="w-5 h-5" />
-          </button>
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -281,12 +247,6 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Global Direct Message Drawer */}
-      <DirectMessageDrawer
-        isOpen={dmDrawerOpen}
-        onClose={() => setDmDrawerOpen(false)}
-      />
     </header>
   );
 };
