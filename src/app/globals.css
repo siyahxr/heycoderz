@@ -18,6 +18,9 @@
     overflow-x: hidden;
     selection-background-color: #8b5cf6;
     selection-color: #ffffff;
+    top: 0px !important;
+    position: static !important;
+    margin-top: 0px !important;
   }
 
   ::selection {
@@ -101,28 +104,34 @@
   background: #2e2e44;
 }
 
-/* Google Translate Suppression & Clean UI Integration */
-.goog-te-banner-frame.skiptranslate,
+/* Complete Google Translate Toolbar & Banner Elimination */
 .goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate,
+iframe.goog-te-banner-frame,
+iframe[id*="goog"],
+iframe[id^=":1"],
+iframe[id^=":2"],
 #goog-gt-tt,
 .goog-te-balloon-frame,
 .goog-tooltip,
 .goog-tooltip:hover,
+.goog-te-gadget,
 #google_translate_element {
   display: none !important;
   visibility: hidden !important;
+  height: 0px !important;
+  max-height: 0px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 body {
   top: 0px !important;
   position: static !important;
+  margin-top: 0px !important;
 }
 
 .goog-text-highlight {
   background: transparent !important;
   box-shadow: none !important;
-}
-
-.goog-te-gadget {
-  display: none !important;
 }

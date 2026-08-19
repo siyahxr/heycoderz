@@ -1,28 +1,118 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, Check, Search } from "lucide-react";
-import { useLanguage, LANGUAGES, LanguageOption } from "@/context/LanguageContext";
+import React, { useState, useEffect, useRef } from "react";
+import { ChevronDown, Check, Search, Globe } from "lucide-react";
+
+export interface LanguageOption {
+  code: string;
+  name: string;
+  nativeName: string;
+  flag: string;
+}
+
+export const LANGUAGES: LanguageOption[] = [
+  { code: "tr", name: "Turkish", nativeName: "Türkçe", flag: "🇹🇷" },
+  { code: "en", name: "English", nativeName: "English", flag: "🇺🇸" },
+  { code: "de", name: "German", nativeName: "Deutsch", flag: "🇩🇪" },
+  { code: "es", name: "Spanish", nativeName: "Español", flag: "🇪🇸" },
+  { code: "fr", name: "French", nativeName: "Français", flag: "🇫🇷" },
+  { code: "it", name: "Italian", nativeName: "Italiano", flag: "🇮🇹" },
+  { code: "ru", name: "Russian", nativeName: "Русский", flag: "🇷🇺" },
+  { code: "ar", name: "Arabic", nativeName: "العربية", flag: "🇸🇦" },
+  { code: "zh-CN", name: "Chinese", nativeName: "简体中文", flag: "🇨🇳" },
+  { code: "ja", name: "Japanese", nativeName: "日本語", flag: "🇯🇵" },
+  { code: "ko", name: "Korean", nativeName: "한국어", flag: "🇰🇷" },
+  { code: "pt", name: "Portuguese", nativeName: "Português", flag: "🇵🇹" },
+  { code: "az", name: "Azerbaijani", nativeName: "Azərbaycan", flag: "🇦🇿" },
+  { code: "nl", name: "Dutch", nativeName: "Nederlands", flag: "🇳🇱" },
+];
 
 export const LanguageSelector: React.FC = () => {
-  const { currentLanguage, setLanguage } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const [currentLang, setCurrentLang] = useState<LanguageOption>(LANGUAGES[0]);
   const [search, setSearch] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Initialize invisible translation engine
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+    // 1. Detect saved language
+    const saved = localStorage.getItem("heycoderz_language") || "tr";
+    const found = LANGUAGES.find((l) => l.code === saved) || LANGUAGES[0];
+    setCurrentLang(found);
+
+    // 2. Setup Google Translate Callback
+    (window as any).googleTranslateElementInit = () => {
+      try {
+        if ((window as any).google?.translate?.TranslateElement) {
+          new (window as any).google.translate.TranslateElement(
+            {
+              pageLanguage: "tr",
+              includedLanguages: LANGUAGES.map((l) => l.code).join(","),
+              autoDisplay: false,
+            },
+            "google_translate_element"
+          );
+        }
+      } catch {}
+    };
+
+    // 3. Inject script if not present
+    if (!document.getElementById("google-translate-script")) {
+      const s = document.createElement("script");
+      s.id = "google-translate-script";
+      s.type = "text/javascript";
+      s.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      s.async = true;
+      document.body.appendChild(s);
+    }
+
+    // 4. Close on outside click
+    const handleOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
-  const filteredLanguages = LANGUAGES.filter(
+  const handleSelectLanguage = (lang: LanguageOption) => {
+    setCurrentLang(lang);
+    setIsOpen(false);
+    localStorage.setItem("heycoderz_language", lang.code);
+
+    if (lang.code === "tr") {
+      // Clear cookie to revert back to native Turkish
+      document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=${window.location.hostname}; path=/;`;
+      document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=.${window.location.hostname}; path=/;`;
+
+      const combo = document.querySelector(".goog-te-combo") as HTMLSelectElement;
+      if (combo) {
+        combo.value = "tr";
+        combo.dispatchEvent(new Event("change"));
+      }
+      window.location.reload();
+      return;
+    }
+
+    // Set translation cookie for whole domain & path
+    const cookieVal = `/tr/${lang.code}`;
+    document.cookie = `googtrans=${cookieVal}; path=/;`;
+    document.cookie = `googtrans=${cookieVal}; domain=${window.location.hostname}; path=/;`;
+    document.cookie = `googtrans=${cookieVal}; domain=.${window.location.hostname}; path=/;`;
+
+    // Trigger instant DOM translation via combo element
+    const combo = document.querySelector(".goog-te-combo") as HTMLSelectElement;
+    if (combo) {
+      combo.value = lang.code;
+      combo.dispatchEvent(new Event("change"));
+    } else {
+      window.location.reload();
+    }
+  };
+
+  const filtered = LANGUAGES.filter(
     (l) =>
       l.nativeName.toLowerCase().includes(search.toLowerCase()) ||
       l.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -31,6 +121,9 @@ export const LanguageSelector: React.FC = () => {
 
   return (
     <div className="relative" ref={dropdownRef}>
+      {/* Hidden Translate Anchor */}
+      <div id="google_translate_element" style={{ display: "none", height: 0, overflow: "hidden" }} />
+
       {/* Trigger Button */}
       <button
         type="button"
@@ -38,9 +131,9 @@ export const LanguageSelector: React.FC = () => {
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-purple-500/40 text-xs font-medium text-gray-200 transition-all duration-200 cursor-pointer shadow-sm"
         title="Dili Değiştir / Change Language"
       >
-        <span className="text-sm">{currentLanguage.flag}</span>
+        <span className="text-sm">{currentLang.flag}</span>
         <span className="font-mono uppercase font-bold tracking-wider text-purple-300">
-          {currentLanguage.code}
+          {currentLang.code.split("-")[0]}
         </span>
         <ChevronDown
           className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${
@@ -59,7 +152,7 @@ export const LanguageSelector: React.FC = () => {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Dil ara..."
+              placeholder="Dil ara / Search language..."
               className="w-full pl-8 pr-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-white text-xs placeholder:text-gray-500 focus:border-purple-500 focus:outline-none"
               autoFocus
             />
@@ -67,16 +160,13 @@ export const LanguageSelector: React.FC = () => {
 
           {/* Languages List */}
           <div className="overflow-y-auto max-h-56 space-y-0.5 custom-scrollbar pr-1">
-            {filteredLanguages.map((lang) => {
-              const isSelected = currentLanguage.code === lang.code;
+            {filtered.map((lang) => {
+              const isSelected = currentLang.code === lang.code;
               return (
                 <button
                   key={lang.code}
                   type="button"
-                  onClick={() => {
-                    setLanguage(lang.code);
-                    setIsOpen(false);
-                  }}
+                  onClick={() => handleSelectLanguage(lang)}
                   className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors text-left cursor-pointer ${
                     isSelected
                       ? "bg-purple-600/30 text-white border border-purple-500/40"
