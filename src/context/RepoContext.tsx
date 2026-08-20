@@ -92,6 +92,7 @@ export interface CreateRepoInput {
 interface RepoContextType {
   repositories: Repository[];
   isLoaded: boolean;
+  refreshRepositories: () => Promise<void>;
   getRepoById: (id: string) => Repository | undefined;
   createRepository: (input: CreateRepoInput, currentUser: UserProfile | null) => Repository;
   deleteRepository: (id: string) => void;
@@ -111,44 +112,60 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [repositories, setRepositories] = useState<Repository[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // Fetch repositories from Cloud Database
+  const refreshRepositories = async () => {
+    try {
+      const res = await fetch("/api/repositories", { cache: "no-store" });
+      const data = await res.json();
+      if (data && data.success && Array.isArray(data.repositories)) {
+        setRepositories(data.repositories);
+        try {
+          localStorage.setItem("heycoderz_repositories", JSON.stringify(data.repositories));
+        } catch {}
+      }
+    } catch (err) {
+      console.warn("Could not sync repositories from cloud DB:", err);
+    } finally {
+      setIsLoaded(true);
+    }
+  };
+
   useEffect(() => {
+    // 1. First load from localStorage for fast initial render
     try {
       const saved = localStorage.getItem("heycoderz_repositories");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          // Purge dummy mock starter projects and their forks
-          const DUMMY_PREFIXES = [
-            "neural-code-companion",
-            "glassmorphic-ui-kit",
-            "fastapi-jwt-starter",
-            "algo-visualizer-engine",
-            "rust-wasm-parser",
-          ];
-          const userOnlyRepos = parsed.filter((r: Repository) => {
-            const isMockId = DUMMY_PREFIXES.some((prefix) => r.id.startsWith(prefix));
-            const isMockFork = r.forkedFrom && DUMMY_PREFIXES.some((prefix) => r.forkedFrom?.repoId?.startsWith(prefix));
-            return !isMockId && !isMockFork;
-          });
-          setRepositories(userOnlyRepos);
-          setIsLoaded(true);
-          localStorage.setItem("heycoderz_repositories", JSON.stringify(userOnlyRepos));
-          return;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setRepositories(parsed);
         }
       }
     } catch {}
-    setRepositories([]);
-    setIsLoaded(true);
-    try {
-      localStorage.setItem("heycoderz_repositories", JSON.stringify([]));
-    } catch {}
+
+    // 2. Fetch fresh data from centralized server/cloud database
+    refreshRepositories();
   }, []);
 
-  const saveRepos = (newRepos: Repository[]) => {
+  const saveRepos = (newRepos: Repository[], singleCreatedRepo?: Repository) => {
     setRepositories(newRepos);
     try {
       localStorage.setItem("heycoderz_repositories", JSON.stringify(newRepos));
     } catch {}
+
+    // Synchronize to Cloud Database
+    if (singleCreatedRepo) {
+      fetch("/api/repositories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repository: singleCreatedRepo }),
+      }).catch((e) => console.warn("Failed to push repository to cloud:", e));
+    } else {
+      fetch("/api/repositories", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ repositories: newRepos }),
+      }).catch((e) => console.warn("Failed to sync repositories to cloud:", e));
+    }
   };
 
   const getRepoById = (id: string): Repository | undefined => {
@@ -207,13 +224,17 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const updated = [newRepo, ...repositories];
-    saveRepos(updated);
+    saveRepos(updated, newRepo);
     return newRepo;
   };
 
   const deleteRepository = (id: string) => {
     const updated = repositories.filter((r) => r.id !== id);
-    saveRepos(updated);
+    setRepositories(updated);
+    try {
+      localStorage.setItem("heycoderz_repositories", JSON.stringify(updated));
+    } catch {}
+    fetch(`/api/repositories?id=${id}`, { method: "DELETE" }).catch((e) => console.warn(e));
   };
 
   const toggleStar = (id: string, currentUser: UserProfile | null) => {
@@ -423,6 +444,7 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         repositories,
         isLoaded,
+        refreshRepositories,
         getRepoById,
         createRepository,
         deleteRepository,

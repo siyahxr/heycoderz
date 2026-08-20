@@ -17,6 +17,7 @@ export async function GET() {
       posts: db.posts || [],
       articles: db.articles || [],
       jobs: db.jobs || [],
+      repositories: db.repositories || [],
       lastUpdated: db.lastUpdated,
     });
   } catch (error: any) {

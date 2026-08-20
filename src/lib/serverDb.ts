@@ -4,6 +4,7 @@ import { BASE_MAIN_USER, BASE_OYKU, UserProfile } from "@/context/AuthContext";
 import { BlogArticle } from "@/context/BlogContext";
 import { CommunityPost } from "@/context/CommunityContext";
 import { JobListing } from "@/app/ilanlar/page";
+import { Repository } from "@/context/RepoContext";
 
 export interface StoredUser extends UserProfile {
   // Security Fix: Plaintext password property REMOVED.
@@ -23,6 +24,7 @@ export interface DatabaseSchema {
   posts: CommunityPost[];
   articles: BlogArticle[];
   jobs: JobListing[];
+  repositories?: Repository[];
   lastUpdated: number;
 }
 
@@ -49,6 +51,7 @@ const INITIAL_DATABASE: DatabaseSchema = {
   posts: [],
   articles: [],
   jobs: [],
+  repositories: [],
   lastUpdated: Date.now(),
 };
 
@@ -112,6 +115,7 @@ export async function fetchCloudDatabase(): Promise<DatabaseSchema> {
         posts: Array.isArray(parsed.posts) ? parsed.posts : [],
         articles: Array.isArray(parsed.articles) ? parsed.articles : [],
         jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
+        repositories: Array.isArray(parsed.repositories) ? parsed.repositories : [],
       };
 
       // Cleanup legacy adminPasswords from root if it exists
@@ -147,6 +151,9 @@ export function getDatabase(): DatabaseSchema {
         ...parsed,
         users: sanitizedUsers.length > 0 ? sanitizedUsers : INITIAL_DATABASE.users,
         posts: Array.isArray(parsed.posts) ? parsed.posts : [],
+        articles: Array.isArray(parsed.articles) ? parsed.articles : [],
+        jobs: Array.isArray(parsed.jobs) ? parsed.jobs : [],
+        repositories: Array.isArray(parsed.repositories) ? parsed.repositories : [],
       };
 
       if ("adminPasswords" in inMemoryDb) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
@@ -29,7 +29,7 @@ import {
   Sparkles,
   ExternalLink
 } from "lucide-react";
-import { useRepo } from "@/context/RepoContext";
+import { Repository, useRepo } from "@/context/RepoContext";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
 import { FileExplorer } from "@/components/repo/FileExplorer";
@@ -52,8 +52,28 @@ export default function RepoDetailPage() {
   const [copiedShare, setCopiedShare] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [forking, setForking] = useState(false);
+  const [directRepo, setDirectRepo] = useState<Repository | null>(null);
+  const [isFetchingDirect, setIsFetchingDirect] = useState(false);
 
-  if (!isLoaded) {
+  // Direct fetch fallback from Cloud DB if not yet in state
+  useEffect(() => {
+    if (!repo && repoId) {
+      setIsFetchingDirect(true);
+      fetch(`/api/repositories?id=${encodeURIComponent(repoId)}`)
+        .then((r) => r.json())
+        .then((d) => {
+          if (d && d.success && d.repository) {
+            setDirectRepo(d.repository);
+          }
+        })
+        .catch(() => {})
+        .finally(() => setIsFetchingDirect(false));
+    }
+  }, [repo, repoId]);
+
+  const activeRepo = repo || directRepo;
+
+  if (!isLoaded || (isFetchingDirect && !activeRepo)) {
     return (
       <div className="relative min-h-screen bg-[#030303] text-gray-100 flex flex-col font-sans">
         <BackgroundEffects />
@@ -67,7 +87,7 @@ export default function RepoDetailPage() {
     );
   }
 
-  if (!repo) {
+  if (!activeRepo) {
     return (
       <div className="relative min-h-screen bg-[#030303] text-gray-100 flex flex-col font-sans">
         <BackgroundEffects />
@@ -89,18 +109,19 @@ export default function RepoDetailPage() {
     );
   }
 
-  const isOwner = user ? user.id === repo.author.id || user.username === repo.author.username || user.role === "admin" : false;
-  const isStarred = user ? repo.starredByUserIds.includes(user.id) : false;
-  const readmeFile = repo.files.find((f) => f.name.toLowerCase() === "readme.md");
+  const currentRepo = activeRepo;
+  const isOwner = user ? user.id === currentRepo.author.id || user.username === currentRepo.author.username || user.role === "admin" : false;
+  const isStarred = user ? currentRepo.starredByUserIds.includes(user.id) : false;
+  const readmeFile = currentRepo.files.find((f) => f.name.toLowerCase() === "readme.md");
 
   const handleStar = () => {
-    toggleStar(repo.id, user);
+    toggleStar(currentRepo.id, user);
   };
 
   const handleFork = () => {
     setForking(true);
     setTimeout(() => {
-      const forked = forkRepository(repo.id, user);
+      const forked = forkRepository(currentRepo.id, user);
       setForking(false);
       if (forked) {
         alert(t("repo.forkSuccess"));
@@ -111,7 +132,7 @@ export default function RepoDetailPage() {
 
   const handleCopyClone = () => {
     if (typeof window === "undefined") return;
-    const url = `https://heycoderz.com/depolar/${repo.id}.git`;
+    const url = `https://heycoderz.com/depolar/${currentRepo.id}.git`;
     navigator.clipboard.writeText(`git clone ${url}`);
     setCopiedClone(true);
     setTimeout(() => setCopiedClone(false), 2000);
@@ -126,7 +147,7 @@ export default function RepoDetailPage() {
 
   const handleDelete = () => {
     if (confirm(t("repo.deleteConfirm"))) {
-      deleteRepository(repo.id);
+      deleteRepository(currentRepo.id);
       router.push("/depolar");
     }
   };
@@ -134,7 +155,7 @@ export default function RepoDetailPage() {
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim()) return;
-    addRepoComment(repo.id, commentText, user);
+    addRepoComment(currentRepo.id, commentText, user);
     setCommentText("");
   };
 
@@ -164,16 +185,16 @@ export default function RepoDetailPage() {
             <div className="space-y-1.5">
               <div className="flex items-center gap-2.5 flex-wrap">
                 <Link
-                  href={`/@${repo.author.username.replace(/^@/, "")}`}
+                  href={`/@${currentRepo.author.username.replace(/^@/, "")}`}
                   className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                 >
                   <img
-                    src={repo.author.avatar}
-                    alt={repo.author.name}
+                    src={currentRepo.author.avatar}
+                    alt={currentRepo.author.name}
                     className="w-8 h-8 rounded-lg object-cover border border-purple-500/40"
                   />
                   <span className="text-sm font-mono text-purple-300 font-medium hover:underline">
-                    @{repo.author.username.replace(/^@/, "")}
+                    @{currentRepo.author.username.replace(/^@/, "")}
                   </span>
                 </Link>
 
@@ -181,11 +202,11 @@ export default function RepoDetailPage() {
 
                 <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2">
                   <FileCode2 className="w-5 h-5 text-purple-400" />
-                  <span>{repo.name}</span>
+                  <span>{currentRepo.name}</span>
                 </h1>
 
                 <span className="inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-full bg-white/[0.05] text-gray-300 border border-white/10 font-mono">
-                  {repo.isPublic ? (
+                  {currentRepo.isPublic ? (
                     <>
                       <Globe2 className="w-3 h-3 text-emerald-400" />
                       <span>Public</span>
@@ -199,15 +220,15 @@ export default function RepoDetailPage() {
                 </span>
               </div>
 
-              {repo.forkedFrom && (
+              {currentRepo.forkedFrom && (
                 <p className="text-xs text-gray-400 flex items-center gap-1.5 font-mono pt-1">
                   <GitFork className="w-3.5 h-3.5 text-purple-400" />
                   <span>{t("repo.forkedFrom")}</span>
                   <Link
-                    href={`/depolar/${repo.forkedFrom.repoId}`}
+                    href={`/depolar/${currentRepo.forkedFrom.repoId}`}
                     className="text-purple-400 hover:underline"
                   >
-                    @{repo.forkedFrom.authorUsername}/{repo.forkedFrom.repoName}
+                    @{currentRepo.forkedFrom.authorUsername}/{currentRepo.forkedFrom.repoName}
                   </Link>
                 </p>
               )}
@@ -228,7 +249,7 @@ export default function RepoDetailPage() {
                 <Star className={`w-4 h-4 ${isStarred ? "fill-amber-400 text-amber-400" : ""}`} />
                 <span>{isStarred ? t("repo.unstar") : t("repo.star")}</span>
                 <span className="px-1.5 py-0.5 rounded bg-black/40 text-[11px] font-mono font-bold">
-                  {repo.stars}
+                  {currentRepo.stars}
                 </span>
               </button>
 
@@ -242,14 +263,14 @@ export default function RepoDetailPage() {
                 <GitFork className="w-4 h-4" />
                 <span>{t("repo.fork")}</span>
                 <span className="px-1.5 py-0.5 rounded bg-black/40 text-[11px] font-mono font-bold">
-                  {repo.forks}
+                  {currentRepo.forks}
                 </span>
               </button>
 
               {/* Direct Download ZIP / RAR Button */}
               <button
                 type="button"
-                onClick={() => downloadRepoZip(repo, "zip")}
+                onClick={() => downloadRepoZip(currentRepo, "zip")}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-white/[0.03] border border-white/10 hover:border-purple-500/40 hover:bg-purple-950/20 text-gray-300 hover:text-white transition-all cursor-pointer"
                 title="Tüm projeyi fotoğraflarla birlikte ZIP/RAR olarak indir"
               >
@@ -283,7 +304,7 @@ export default function RepoDetailPage() {
 
                     <div className="flex items-center gap-1.5 p-2 rounded-xl bg-black/70 border border-white/10 font-mono text-[11px]">
                       <span className="truncate text-gray-300 select-all">
-                        git clone https://heycoderz.com/depolar/{repo.id}.git
+                        git clone https://heycoderz.com/depolar/{currentRepo.id}.git
                       </span>
                       <button
                         type="button"
@@ -298,7 +319,7 @@ export default function RepoDetailPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          downloadRepoZip(repo, "zip");
+                          downloadRepoZip(currentRepo, "zip");
                           setCloneModalOpen(false);
                         }}
                         className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-purple-600/25 hover:bg-purple-600/40 border border-purple-500/40 text-xs font-semibold text-purple-200 transition-all cursor-pointer"
@@ -310,7 +331,7 @@ export default function RepoDetailPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          downloadRepoZip(repo, "rar");
+                          downloadRepoZip(currentRepo, "rar");
                           setCloneModalOpen(false);
                         }}
                         className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-medium text-gray-300 hover:text-white transition-all cursor-pointer"
@@ -350,7 +371,7 @@ export default function RepoDetailPage() {
 
           {/* Description */}
           <p className="text-xs sm:text-sm text-gray-300 leading-relaxed max-w-4xl">
-            {repo.description || "Açıklama belirtilmemiş."}
+            {currentRepo.description || "Açıklama belirtilmemiş."}
           </p>
 
           {/* Tags & Meta */}
@@ -359,24 +380,24 @@ export default function RepoDetailPage() {
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.03] border border-white/10 text-gray-200 font-medium">
               <span
                 className="w-2.5 h-2.5 rounded-full"
-                style={{ backgroundColor: repo.languageColor || "#a855f7" }}
+                style={{ backgroundColor: currentRepo.languageColor || "#a855f7" }}
               />
-              <span>{repo.primaryLanguage}</span>
+              <span>{currentRepo.primaryLanguage}</span>
             </span>
 
             {/* License */}
             <span className="px-3 py-1 rounded-full bg-white/[0.03] border border-white/10 text-gray-300 font-mono text-[11px]">
-              {repo.license} Lisansı
+              {currentRepo.license} Lisansı
             </span>
 
             {/* Default Branch */}
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-purple-950/30 border border-purple-500/20 text-purple-300 font-mono text-[11px]">
               <GitBranch className="w-3 h-3" />
-              <span>{repo.defaultBranch}</span>
+              <span>{currentRepo.defaultBranch}</span>
             </span>
 
             {/* Tags */}
-            {repo.tags.map((tag, idx) => (
+            {currentRepo.tags.map((tag, idx) => (
               <span
                 key={idx}
                 className="px-2.5 py-1 rounded-full bg-white/[0.02] border border-white/[0.06] text-gray-400 text-[11px] font-mono"
@@ -391,9 +412,9 @@ export default function RepoDetailPage() {
         {/* Navigation Tabs Bar */}
         <div className="flex items-center gap-2 border-b border-white/[0.08] pb-1 overflow-x-auto custom-scrollbar">
           {[
-            { id: "code", label: t("repo.tabCode"), icon: FileCode2, count: repo.files.length },
-            { id: "discussions", label: t("repo.tabDiscussions"), icon: MessageSquare, count: repo.comments.length },
-            { id: "releases", label: t("repo.tabReleases"), icon: Tag, count: repo.releases.length },
+            { id: "code", label: t("repo.tabCode"), icon: FileCode2, count: currentRepo.files.length },
+            { id: "discussions", label: t("repo.tabDiscussions"), icon: MessageSquare, count: currentRepo.comments.length },
+            { id: "releases", label: t("repo.tabReleases"), icon: Tag, count: currentRepo.releases.length },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -423,7 +444,7 @@ export default function RepoDetailPage() {
         {/* Tab Content: Code View (FileExplorer + Readme) */}
         {activeTab === "code" && (
           <div className="space-y-6">
-            <FileExplorer repo={repo} isOwner={isOwner} />
+            <FileExplorer repo={currentRepo} isOwner={isOwner} />
 
             {/* Readme Section */}
             {readmeFile && (
@@ -470,9 +491,9 @@ export default function RepoDetailPage() {
             </form>
 
             {/* Comments List */}
-            {repo.comments.length > 0 ? (
+            {currentRepo.comments.length > 0 ? (
               <div className="space-y-3">
-                {repo.comments.map((comment) => (
+                {currentRepo.comments.map((comment) => (
                   <div
                     key={comment.id}
                     className="p-4 sm:p-5 rounded-2xl bg-[#09090F]/80 border border-white/[0.08] space-y-2"
@@ -513,8 +534,8 @@ export default function RepoDetailPage() {
         {/* Tab Content: Releases & Stats */}
         {activeTab === "releases" && (
           <div className="space-y-4 max-w-4xl mx-auto">
-            {repo.releases.length > 0 ? (
-              repo.releases.map((rel, idx) => (
+            {currentRepo.releases.length > 0 ? (
+              currentRepo.releases.map((rel, idx) => (
                 <div
                   key={idx}
                   className="p-6 rounded-2xl bg-[#09090F]/90 border border-white/[0.08] space-y-3"
