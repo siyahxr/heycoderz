@@ -322,10 +322,16 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({ isOpen, onClos
     }
   };
 
-  // ZIP / Archive extractor
+  // ZIP / Archive & File extractor with Base64 Image support
   const handleArchiveOrFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = e.target.files;
     if (!uploadedFiles || uploadedFiles.length === 0) return;
+
+    const IMAGE_EXTS = ["png", "jpg", "jpeg", "gif", "webp", "svg", "ico", "bmp", "avif"];
+    const BINARY_SKIP_EXTS = [
+      "exe", "dll", "so", "dylib", "bin", "dat", "iso", "tar", "gz", "7z", "zip", "rar",
+      "woff", "woff2", "ttf", "eot", "otf", "mp3", "mp4", "webm", "ogg", "wav", "pdf"
+    ];
 
     setIsExtracting(true);
     setExtractStatus("Arşiv taranıyor ve dosyalar ayrıştırılıyor...");
@@ -370,37 +376,92 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({ isOpen, onClos
             }
 
             try {
-              const textContent = await zipEntry.async("string");
-              const bytes = new Blob([textContent]).size;
-              const sizeStr = bytes > 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} B`;
               const cleanName = filename.split("/").pop() || filename;
               const ext = cleanName.split(".").pop()?.toLowerCase() || "txt";
 
-              newFilesList.push({
-                name: cleanName,
-                path: filename,
-                content: textContent,
-                size: sizeStr,
-                language: ext,
-              });
+              if (IMAGE_EXTS.includes(ext)) {
+                // Read as Base64 Data URL for instant, lag-free image preview
+                const base64 = await zipEntry.async("base64");
+                const mime = ext === "svg" ? "image/svg+xml" : ext === "ico" ? "image/x-icon" : `image/${ext}`;
+                const dataUrl = `data:${mime};base64,${base64}`;
+                const approxBytes = Math.round((base64.length * 3) / 4);
+                const sizeStr = approxBytes > 1024 ? `${(approxBytes / 1024).toFixed(1)} KB` : `${approxBytes} B`;
+
+                newFilesList.push({
+                  name: cleanName,
+                  path: filename,
+                  content: dataUrl,
+                  size: sizeStr,
+                  language: "image",
+                });
+              } else if (BINARY_SKIP_EXTS.includes(ext)) {
+                newFilesList.push({
+                  name: cleanName,
+                  path: filename,
+                  content: "[İkili Dosya / Binary File]",
+                  size: "İkili",
+                  language: "binary",
+                });
+              } else {
+                // Text / Code file
+                const textContent = await zipEntry.async("string");
+                const bytes = new Blob([textContent]).size;
+                const sizeStr = bytes > 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} B`;
+
+                newFilesList.push({
+                  name: cleanName,
+                  path: filename,
+                  content: textContent,
+                  size: sizeStr,
+                  language: ext,
+                });
+              }
             } catch (err) {
               // Binary / unreadable file skipped
             }
           }
         } else {
           // Regular loose file
-          const textContent = await file.text();
-          const bytes = file.size;
-          const sizeStr = bytes > 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} B`;
-          const ext = file.name.split(".").pop()?.toLowerCase() || "txt";
+          const cleanName = file.name;
+          const ext = cleanName.split(".").pop()?.toLowerCase() || "txt";
 
-          newFilesList.push({
-            name: file.name,
-            path: file.name,
-            content: textContent,
-            size: sizeStr,
-            language: ext,
-          });
+          if (IMAGE_EXTS.includes(ext)) {
+            const dataUrl = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = (ev) => resolve((ev.target?.result as string) || "");
+              reader.readAsDataURL(file);
+            });
+            const bytes = file.size;
+            const sizeStr = bytes > 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} B`;
+
+            newFilesList.push({
+              name: cleanName,
+              path: file.name,
+              content: dataUrl,
+              size: sizeStr,
+              language: "image",
+            });
+          } else if (BINARY_SKIP_EXTS.includes(ext)) {
+            newFilesList.push({
+              name: cleanName,
+              path: file.name,
+              content: "[İkili Dosya / Binary File]",
+              size: file.size > 1024 ? `${(file.size / 1024).toFixed(1)} KB` : `${file.size} B`,
+              language: "binary",
+            });
+          } else {
+            const textContent = await file.text();
+            const bytes = file.size;
+            const sizeStr = bytes > 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} B`;
+
+            newFilesList.push({
+              name: cleanName,
+              path: file.name,
+              content: textContent,
+              size: sizeStr,
+              language: ext,
+            });
+          }
         }
       }
 
@@ -410,11 +471,11 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({ isOpen, onClos
         analyzeFilesAndApplyWeights(newFilesList, archiveBaseName);
 
         setExtractStatus(
-          `✓ ${newFilesList.length} dosya başarıyla ayrıştırıldı ve ana dil otomatik belirlendi!`
+          `✓ ${newFilesList.length} dosya başarıyla ayrıştırıldı (Görseller ve kodlar optimize edildi)!`
         );
         setTimeout(() => setExtractStatus(null), 4000);
       } else {
-        alert("Arşiv içinde okunabilir metin/kod dosyası bulunamadı.");
+        alert("Arşiv içinde okunabilir dosya bulunamadı.");
         setExtractStatus(null);
       }
     } catch (err: any) {

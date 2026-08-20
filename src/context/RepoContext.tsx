@@ -353,6 +353,15 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const downloadSingleFile = (file: RepoFile) => {
     if (typeof window === "undefined") return;
+    if (file.content.startsWith("data:")) {
+      const a = document.createElement("a");
+      a.href = file.content;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
     const blob = new Blob([file.content], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

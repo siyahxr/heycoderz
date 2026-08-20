@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { 
   FileCode2, 
   Folder, 
@@ -17,7 +17,11 @@ import {
   Save, 
   X,
   FileJson,
-  Binary
+  Binary,
+  Image as ImageIcon,
+  Sparkles,
+  Maximize2,
+  FileArchive
 } from "lucide-react";
 import { RepoFile, Repository, useRepo } from "@/context/RepoContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -26,6 +30,9 @@ interface FileExplorerProps {
   repo: Repository;
   isOwner?: boolean;
 }
+
+const IMAGE_EXTENSIONS_REGEX = /\.(png|jpg|jpeg|gif|webp|svg|ico|bmp|avif)$/i;
+const BINARY_EXTENSIONS_REGEX = /\.(exe|dll|so|dylib|bin|dat|woff|woff2|ttf|eot|otf|pdf|zip|rar|7z|tar|gz|mp3|mp4)$/i;
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({ repo, isOwner = false }) => {
   const { t } = useLanguage();
@@ -55,6 +62,26 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ repo, isOwner = fals
     setIsEditing(false);
     setEditContent(file.content);
   };
+
+  // Determine file type
+  const isImage = useMemo(() => {
+    return (
+      selectedFile.language === "image" ||
+      selectedFile.content.startsWith("data:image/") ||
+      IMAGE_EXTENSIONS_REGEX.test(selectedFile.name) ||
+      IMAGE_EXTENSIONS_REGEX.test(selectedFile.path)
+    );
+  }, [selectedFile]);
+
+  const isBinary = useMemo(() => {
+    return (
+      !isImage &&
+      (selectedFile.language === "binary" ||
+        selectedFile.content.startsWith("[İkili Dosya") ||
+        BINARY_EXTENSIONS_REGEX.test(selectedFile.name) ||
+        BINARY_EXTENSIONS_REGEX.test(selectedFile.path))
+    );
+  }, [selectedFile, isImage]);
 
   const handleCopyCode = () => {
     if (typeof window === "undefined") return;
@@ -107,19 +134,31 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ repo, isOwner = fals
     setNewFileContent("");
   };
 
-  const getFileIcon = (fileName: string) => {
+  const getFileIcon = (fileName: string, lang?: string) => {
     const ext = fileName.split(".").pop()?.toLowerCase();
+    if (lang === "image" || (ext && ["png", "jpg", "jpeg", "webp", "gif", "svg", "ico", "bmp", "avif"].includes(ext))) {
+      return <ImageIcon className="w-4 h-4 text-emerald-400" />;
+    }
     if (ext === "json") return <FileJson className="w-4 h-4 text-amber-400" />;
     if (ext === "md") return <FileText className="w-4 h-4 text-sky-400" />;
-    if (ext === "css") return <Code className="w-4 h-4 text-pink-400" />;
+    if (ext === "css" || ext === "scss" || ext === "less") return <Code className="w-4 h-4 text-pink-400" />;
     if (ext === "ts" || ext === "tsx") return <FileCode2 className="w-4 h-4 text-blue-400" />;
     if (ext === "js" || ext === "jsx") return <FileCode2 className="w-4 h-4 text-yellow-400" />;
     if (ext === "py") return <Binary className="w-4 h-4 text-emerald-400" />;
     if (ext === "rs") return <Binary className="w-4 h-4 text-orange-400" />;
+    if (lang === "binary" || (ext && ["exe", "dll", "zip", "rar", "bin", "dat", "pdf"].includes(ext))) {
+      return <FileArchive className="w-4 h-4 text-gray-500" />;
+    }
     return <FileCode2 className="w-4 h-4 text-purple-400" />;
   };
 
-  const codeLines = (isEditing ? editContent : selectedFile.content).split("\n");
+  // Safe line count and lines splitting - NEVER split large binaries or images
+  const codeLines = useMemo(() => {
+    if (isImage || isBinary) return [];
+    const source = isEditing ? editContent : selectedFile.content;
+    if (!source) return [];
+    return source.split("\n");
+  }, [isImage, isBinary, isEditing, editContent, selectedFile.content]);
 
   return (
     <div className="rounded-2xl bg-[#09090F]/95 border border-white/[0.08] shadow-2xl overflow-hidden backdrop-blur-md">
@@ -162,7 +201,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ repo, isOwner = fals
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    {getFileIcon(file.name)}
+                    {getFileIcon(file.name, file.language)}
                     <span className="truncate">{file.path}</span>
                   </div>
 
@@ -175,7 +214,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ repo, isOwner = fals
                           e.stopPropagation();
                           handleDeleteFile(file.path);
                         }}
-                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-opacity"
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-opacity cursor-pointer"
                         title="Dosyayı Sil"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -191,21 +230,28 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ repo, isOwner = fals
         {/* Right column: Selected File Actions Header */}
         <div className="lg:col-span-8 p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 bg-white/[0.01]">
           <div className="flex items-center gap-2.5 min-w-0">
-            {getFileIcon(selectedFile.name)}
+            {getFileIcon(selectedFile.name, selectedFile.language)}
             <span className="text-sm font-mono font-bold text-white truncate">
               {selectedFile.path}
             </span>
-            <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/[0.05] text-gray-400 font-mono">
-              {codeLines.length} {t("repo.lines")}
-            </span>
+            {!isImage && !isBinary && (
+              <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/[0.05] text-gray-400 font-mono">
+                {codeLines.length} {t("repo.lines")}
+              </span>
+            )}
             <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/[0.05] text-gray-400 font-mono">
               {selectedFile.size}
             </span>
+            {isImage && (
+              <span className="text-[10px] px-2 py-0.5 rounded-md bg-emerald-950/40 text-emerald-300 border border-emerald-500/30 font-mono">
+                Görsel
+              </span>
+            )}
           </div>
 
           {/* Action Buttons: Edit, Copy, Raw, Download */}
           <div className="flex items-center gap-2">
-            {isOwner && !isEditing && (
+            {!isImage && !isBinary && isOwner && !isEditing && (
               <button
                 type="button"
                 onClick={() => {
@@ -240,7 +286,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ repo, isOwner = fals
               </div>
             )}
 
-            {!isEditing && (
+            {!isEditing && !isImage && !isBinary && (
               <>
                 <button
                   type="button"
@@ -273,26 +319,78 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ repo, isOwner = fals
                     </>
                   )}
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => downloadSingleFile(selectedFile)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-purple-950/30 border border-white/10 hover:border-purple-500/30 text-xs font-medium text-gray-300 hover:text-white transition-all cursor-pointer"
-                  title={t("repo.downloadFile")}
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{t("common.download")}</span>
-                </button>
               </>
             )}
+
+            {/* Download File Button */}
+            <button
+              type="button"
+              onClick={() => downloadSingleFile(selectedFile)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.03] hover:bg-purple-950/30 border border-white/10 hover:border-purple-500/30 text-xs font-medium text-gray-300 hover:text-white transition-all cursor-pointer"
+              title={t("repo.downloadFile")}
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{t("common.download")}</span>
+            </button>
           </div>
         </div>
 
       </div>
 
-      {/* Main Code Viewing or Editing Area */}
+      {/* Main Content Area: Image Previewer, Binary Card, or Code View */}
       <div className="relative bg-[#050508] p-4 font-mono text-[13px] leading-6 overflow-x-auto min-h-[360px] max-h-[620px] custom-scrollbar">
-        {isEditing ? (
+        
+        {/* 1. IMAGE PREVIEWER (Zero lag, clean photo rendering) */}
+        {isImage ? (
+          <div className="flex flex-col items-center justify-center p-6 sm:p-10 min-h-[380px] rounded-2xl bg-[#030306] border border-white/[0.05] space-y-4">
+            <div className="relative max-w-full p-3 rounded-2xl bg-black/70 border border-purple-500/30 shadow-[0_15px_40px_rgba(0,0,0,0.8),0_0_25px_rgba(139,92,246,0.15)] backdrop-blur-md">
+              <img
+                src={selectedFile.content}
+                alt={selectedFile.name}
+                className="max-h-[440px] max-w-full rounded-xl object-contain mx-auto transition-transform hover:scale-[1.01]"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-gray-400">
+              <span className="px-3 py-1 rounded-lg bg-white/[0.04] border border-white/10 text-gray-300 font-mono">
+                {selectedFile.name}
+              </span>
+              <span className="text-gray-600">•</span>
+              <span className="text-gray-400 font-mono">{selectedFile.size}</span>
+              <span className="text-gray-600">•</span>
+              <button
+                type="button"
+                onClick={() => downloadSingleFile(selectedFile)}
+                className="inline-flex items-center gap-1 text-purple-400 hover:text-purple-300 transition-colors cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Orijinal Görseli İndir</span>
+              </button>
+            </div>
+          </div>
+        ) : isBinary ? (
+          /* 2. BINARY NON-TEXT FILE HANDLER */
+          <div className="flex flex-col items-center justify-center p-12 text-center text-gray-400 space-y-4 min-h-[360px]">
+            <div className="w-14 h-14 rounded-2xl bg-purple-950/40 border border-purple-500/30 flex items-center justify-center text-purple-400 shadow-xl">
+              <Binary className="w-7 h-7" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-white mb-1">İkili Dosya (Binary)</h4>
+              <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                Bu dosya metin tabanlı kod olmadığı için doğrudan tarayıcıda önizlenemiyor. Dosyayı indirerek inceleyebilirsiniz.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => downloadSingleFile(selectedFile)}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600/25 hover:bg-purple-600/40 border border-purple-500/40 text-purple-300 text-xs font-semibold transition-all cursor-pointer"
+            >
+              <Download className="w-4 h-4" />
+              <span>Dosyayı İndir ({selectedFile.size})</span>
+            </button>
+          </div>
+        ) : isEditing ? (
+          /* 3. CODE EDITOR */
           <textarea
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
@@ -300,10 +398,12 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ repo, isOwner = fals
             placeholder="Dosya içeriğini yazın..."
           />
         ) : isRaw ? (
+          /* 4. RAW CODE */
           <pre className="text-gray-300 whitespace-pre font-mono selection:bg-purple-500/30">
             {selectedFile.content}
           </pre>
         ) : (
+          /* 5. SMOOTH LINE NUMBERED CODE TABLE */
           <div className="table w-full border-collapse">
             {codeLines.map((line, idx) => (
               <div key={idx} className="table-row group/line hover:bg-white/[0.03] transition-colors">
@@ -331,7 +431,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ repo, isOwner = fals
               <button
                 type="button"
                 onClick={() => setIsAddingFile(false)}
-                className="text-gray-400 hover:text-white"
+                className="text-gray-400 hover:text-white cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -369,13 +469,13 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ repo, isOwner = fals
                 <button
                   type="button"
                   onClick={() => setIsAddingFile(false)}
-                  className="px-4 py-2 rounded-xl bg-white/[0.05] text-xs font-medium text-gray-300 hover:text-white"
+                  className="px-4 py-2 rounded-xl bg-white/[0.05] text-xs font-medium text-gray-300 hover:text-white cursor-pointer"
                 >
                   {t("common.cancel")}
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-xs font-medium text-white shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-xs font-medium text-white shadow-[0_0_15px_rgba(139,92,246,0.3)] cursor-pointer"
                 >
                   Dosyayı Kaydet
                 </button>
