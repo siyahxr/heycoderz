@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import JSZip from "jszip";
 import { 
   X, 
   FolderPlus, 
@@ -14,7 +15,13 @@ import {
   Lock, 
   Sparkles, 
   Check, 
-  Layers
+  Layers,
+  FileArchive,
+  Loader2,
+  PackageCheck,
+  Cpu,
+  Terminal,
+  FolderOpen
 } from "lucide-react";
 import { RepoFile, useRepo } from "@/context/RepoContext";
 import { useAuth } from "@/context/AuthContext";
@@ -24,6 +31,37 @@ interface CreateRepoModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const EXT_TO_LANG_MAP: Record<string, { lang: string; category: "web" | "backend" | "ai" | "tools" | "games" }> = {
+  ts: { lang: "TypeScript", category: "web" },
+  tsx: { lang: "TypeScript", category: "web" },
+  js: { lang: "JavaScript", category: "web" },
+  jsx: { lang: "JavaScript", category: "web" },
+  mjs: { lang: "JavaScript", category: "web" },
+  cjs: { lang: "JavaScript", category: "web" },
+  py: { lang: "Python", category: "backend" },
+  pyw: { lang: "Python", category: "backend" },
+  rs: { lang: "Rust", category: "tools" },
+  go: { lang: "Go", category: "backend" },
+  cpp: { lang: "C++", category: "tools" },
+  cc: { lang: "C++", category: "tools" },
+  cxx: { lang: "C++", category: "tools" },
+  c: { lang: "C++", category: "tools" },
+  h: { lang: "C++", category: "tools" },
+  hpp: { lang: "C++", category: "tools" },
+  css: { lang: "CSS", category: "web" },
+  scss: { lang: "CSS", category: "web" },
+  sass: { lang: "CSS", category: "web" },
+  less: { lang: "CSS", category: "web" },
+  html: { lang: "HTML", category: "web" },
+  htm: { lang: "HTML", category: "web" },
+  php: { lang: "PHP", category: "backend" },
+  java: { lang: "Java", category: "backend" },
+  sql: { lang: "SQL", category: "backend" },
+  sh: { lang: "Shell", category: "tools" },
+  json: { lang: "JSON", category: "web" },
+  md: { lang: "Markdown", category: "web" },
+};
 
 const TEMPLATES: Record<string, { desc: string; lang: string; category: "web" | "backend" | "ai" | "tools" | "games"; tags: string[]; files: RepoFile[] }> = {
   blank: {
@@ -153,6 +191,10 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({ isOpen, onClos
   const [files, setFiles] = useState<RepoFile[]>(TEMPLATES.nextjs.files);
   const [activeFileIndex, setActiveFileIndex] = useState(0);
 
+  // Archive unpacking status
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractStatus, setExtractStatus] = useState<string | null>(null);
+
   // New file input sub-form
   const [showAddFile, setShowAddFile] = useState(false);
   const [newFilePath, setNewFilePath] = useState("");
@@ -188,13 +230,13 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({ isOpen, onClos
     if (!newFilePath.trim()) return;
 
     const path = newFilePath.trim();
-    const name = path.split("/").pop() || path;
-    const ext = name.split(".").pop()?.toLowerCase() || "txt";
+    const fileName = path.split("/").pop() || path;
+    const ext = fileName.split(".").pop()?.toLowerCase() || "txt";
 
     const newFile: RepoFile = {
-      name,
+      name: fileName,
       path,
-      content: `// ${name}\n`,
+      content: `// ${fileName}\n`,
       size: "20 B",
       language: ext,
     };
@@ -215,34 +257,172 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({ isOpen, onClos
     setActiveFileIndex(Math.max(0, index - 1));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Analyze language weight and auto-detect primary language & category
+  const analyzeFilesAndApplyWeights = (extractedFiles: RepoFile[], archiveName?: string) => {
+    const langBytes: Record<string, number> = {};
+    const detectedTags = new Set<string>();
+
+    extractedFiles.forEach((f) => {
+      const ext = f.name.split(".").pop()?.toLowerCase() || "";
+      const mapping = EXT_TO_LANG_MAP[ext];
+      const bytes = new Blob([f.content]).size;
+
+      if (mapping) {
+        langBytes[mapping.lang] = (langBytes[mapping.lang] || 0) + bytes;
+      }
+
+      // Auto-tag detection
+      if (ext) detectedTags.add(ext);
+      if (f.name.toLowerCase().includes("readme")) detectedTags.add("documentation");
+      if (f.name.toLowerCase().includes("docker")) detectedTags.add("docker");
+      if (f.name.toLowerCase().includes("fastapi")) detectedTags.add("fastapi");
+      if (f.name.toLowerCase().includes("next.config")) detectedTags.add("nextjs");
+      if (f.name.toLowerCase().includes("package.json")) detectedTags.add("nodejs");
+      if (f.name.toLowerCase().includes("requirements.txt")) detectedTags.add("python");
+      if (f.name.toLowerCase().includes("cargo.toml")) detectedTags.add("rust");
+    });
+
+    // Find dominant language by byte size
+    let dominantLang = "TypeScript";
+    let maxBytes = -1;
+    for (const [lang, bytes] of Object.entries(langBytes)) {
+      if (bytes > maxBytes && lang !== "JSON" && lang !== "Markdown") {
+        maxBytes = bytes;
+        dominantLang = lang;
+      }
+    }
+
+    // Determine category
+    let autoCategory: "web" | "backend" | "ai" | "tools" | "games" = "web";
+    if (dominantLang === "Python" || dominantLang === "Go" || dominantLang === "PHP" || dominantLang === "Java" || dominantLang === "SQL") {
+      autoCategory = "backend";
+    } else if (dominantLang === "Rust" || dominantLang === "C++" || dominantLang === "Shell") {
+      autoCategory = "tools";
+    } else if (dominantLang === "TypeScript" || dominantLang === "JavaScript" || dominantLang === "HTML" || dominantLang === "CSS") {
+      autoCategory = "web";
+    }
+
+    setPrimaryLanguage(dominantLang);
+    setCategory(autoCategory);
+
+    // Auto-set tags
+    const tagList = Array.from(detectedTags).slice(0, 5);
+    if (tagList.length > 0) {
+      setTagsInput(tagList.join(", "));
+    }
+
+    // Auto-set repo name if empty
+    if (archiveName && !name.trim()) {
+      const cleanSlug = archiveName
+        .replace(/\.(zip|rar|tar\.gz|tar|7z)$/i, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9-_]/g, "-")
+        .replace(/-+/g, "-");
+      setName(cleanSlug);
+    }
+  };
+
+  // ZIP / Archive extractor
+  const handleArchiveOrFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = e.target.files;
     if (!uploadedFiles || uploadedFiles.length === 0) return;
 
-    Array.from(uploadedFiles).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const content = event.target?.result as string;
-        const bytes = file.size;
-        const sizeStr = bytes > 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} B`;
-        const ext = file.name.split(".").pop()?.toLowerCase() || "txt";
+    setIsExtracting(true);
+    setExtractStatus("Arşiv taranıyor ve dosyalar ayrıştırılıyor...");
 
-        const newRepoFile: RepoFile = {
-          name: file.name,
-          path: file.name,
-          content: content || "",
-          size: sizeStr,
-          language: ext,
-        };
+    try {
+      const newFilesList: RepoFile[] = [];
+      let archiveBaseName = "";
 
-        setFiles((prev) => {
-          // If already exists, replace; else append
-          const filtered = prev.filter((f) => f.path !== file.name);
-          return [...filtered, newRepoFile];
-        });
-      };
-      reader.readAsText(file);
-    });
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        const file = uploadedFiles[i];
+
+        // Check if ZIP archive
+        if (
+          file.name.toLowerCase().endsWith(".zip") ||
+          file.type === "application/zip" ||
+          file.type === "application/x-zip-compressed"
+        ) {
+          archiveBaseName = file.name;
+          const zip = new JSZip();
+          const loadedZip = await zip.loadAsync(file);
+
+          const entries = Object.keys(loadedZip.files);
+          setExtractStatus(`${file.name} açılıyor (${entries.length} öğe)...`);
+
+          for (const filename of entries) {
+            const zipEntry = loadedZip.files[filename];
+            if (zipEntry.dir) continue;
+
+            // Skip hidden or junk dirs
+            if (
+              filename.includes("__MACOSX") ||
+              filename.includes(".DS_Store") ||
+              filename.includes("node_modules/") ||
+              filename.includes(".git/") ||
+              filename.includes(".next/") ||
+              filename.includes(".venv/") ||
+              filename.includes("__pycache__/") ||
+              filename.includes("dist/") ||
+              filename.includes(".vscode/")
+            ) {
+              continue;
+            }
+
+            try {
+              const textContent = await zipEntry.async("string");
+              const bytes = new Blob([textContent]).size;
+              const sizeStr = bytes > 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} B`;
+              const cleanName = filename.split("/").pop() || filename;
+              const ext = cleanName.split(".").pop()?.toLowerCase() || "txt";
+
+              newFilesList.push({
+                name: cleanName,
+                path: filename,
+                content: textContent,
+                size: sizeStr,
+                language: ext,
+              });
+            } catch (err) {
+              // Binary / unreadable file skipped
+            }
+          }
+        } else {
+          // Regular loose file
+          const textContent = await file.text();
+          const bytes = file.size;
+          const sizeStr = bytes > 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${bytes} B`;
+          const ext = file.name.split(".").pop()?.toLowerCase() || "txt";
+
+          newFilesList.push({
+            name: file.name,
+            path: file.name,
+            content: textContent,
+            size: sizeStr,
+            language: ext,
+          });
+        }
+      }
+
+      if (newFilesList.length > 0) {
+        setFiles(newFilesList);
+        setActiveFileIndex(0);
+        analyzeFilesAndApplyWeights(newFilesList, archiveBaseName);
+
+        setExtractStatus(
+          `✓ ${newFilesList.length} dosya başarıyla ayrıştırıldı ve ana dil otomatik belirlendi!`
+        );
+        setTimeout(() => setExtractStatus(null), 4000);
+      } else {
+        alert("Arşiv içinde okunabilir metin/kod dosyası bulunamadı.");
+        setExtractStatus(null);
+      }
+    } catch (err: any) {
+      alert("Dosya veya arşiv okunurken hata oluştu: " + (err?.message || "Bilinmeyen hata"));
+      setExtractStatus(null);
+    } finally {
+      setIsExtracting(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -306,11 +486,59 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({ isOpen, onClos
         {/* Modal Scrollable Body */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
           
+          {/* ARCHIVE / ZIP DROPZONE & AUTO-EXTRACTOR HERO */}
+          <div className="relative rounded-2xl bg-gradient-to-r from-purple-950/40 via-indigo-950/30 to-black/60 border border-purple-500/30 p-5 shadow-lg space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-600/20 border border-purple-500/40 flex items-center justify-center text-purple-300 shrink-0">
+                  <FileArchive className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>Arşiv / ZIP & Dosya Yükle</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                      Otomatik Ayrıştırma
+                    </span>
+                  </h4>
+                  <p className="text-xs text-gray-400">
+                    Proje ZIP dosyanızı seçin; tüm dosyalar otomatik çıkarılır ve en ağırlıklı programlama dili algılanır.
+                  </p>
+                </div>
+              </div>
+
+              {/* Upload Archive Input Button */}
+              <label className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all cursor-pointer shrink-0">
+                {isExtracting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Upload className="w-4 h-4" />
+                )}
+                <span>{isExtracting ? "Ayrıştırılıyor..." : "ZIP / Dosya Seç"}</span>
+                <input
+                  type="file"
+                  multiple
+                  accept=".zip,.rar,.tar,.gz,.json,.js,.ts,.tsx,.jsx,.py,.rs,.go,.cpp,.c,.h,.css,.html,.md,.txt"
+                  onChange={handleArchiveOrFilesUpload}
+                  disabled={isExtracting}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* Status notification toast */}
+            {extractStatus && (
+              <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-purple-950/60 border border-purple-500/40 text-xs font-mono text-purple-200 animate-in fade-in">
+                <Sparkles className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                <span>{extractStatus}</span>
+              </div>
+            )}
+          </div>
+
           {/* Quick Template Selector */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-2 flex items-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-              <span>{t("repo.templateLabel")}</span>
+              <span>veya Hazır Şablon Seçin</span>
             </label>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
@@ -354,13 +582,14 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({ isOpen, onClos
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                {t("repo.langLabel")}
+              <label className="block text-xs font-medium text-gray-300 mb-1.5 flex items-center justify-between">
+                <span>{t("repo.langLabel")}</span>
+                <span className="text-[10px] text-purple-400 font-mono">Otomatik Ağırlık Tespiti</span>
               </label>
               <select
                 value={primaryLanguage}
                 onChange={(e) => setPrimaryLanguage(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-black/50 border border-white/15 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors"
+                className="w-full px-4 py-2.5 rounded-xl bg-black/50 border border-white/15 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors cursor-pointer"
               >
                 <option value="TypeScript">TypeScript</option>
                 <option value="JavaScript">JavaScript</option>
@@ -370,6 +599,9 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({ isOpen, onClos
                 <option value="HTML">HTML</option>
                 <option value="Go">Go</option>
                 <option value="C++">C++</option>
+                <option value="Java">Java</option>
+                <option value="PHP">PHP</option>
+                <option value="SQL">SQL</option>
               </select>
             </div>
           </div>
@@ -397,7 +629,7 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({ isOpen, onClos
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as any)}
-                className="w-full px-4 py-2.5 rounded-xl bg-black/50 border border-white/15 text-white text-sm focus:outline-none focus:border-purple-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-black/50 border border-white/15 text-white text-sm focus:outline-none focus:border-purple-500 cursor-pointer"
               >
                 <option value="web">Web & Frontend</option>
                 <option value="backend">Backend & API</option>
@@ -490,19 +722,8 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({ isOpen, onClos
                 })}
               </div>
 
-              {/* Add File / Upload Buttons */}
+              {/* Add File Button */}
               <div className="flex items-center gap-2 shrink-0">
-                <label className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-purple-950/40 border border-white/10 hover:border-purple-500/30 text-xs font-medium text-gray-300 hover:text-purple-300 transition-all cursor-pointer">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">{t("repo.uploadFiles")}</span>
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </label>
-
                 <button
                   type="button"
                   onClick={() => setShowAddFile(true)}
@@ -527,14 +748,14 @@ export const CreateRepoModal: React.FC<CreateRepoModalProps> = ({ isOpen, onClos
                 <button
                   type="button"
                   onClick={handleAddFile}
-                  className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium"
+                  className="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium cursor-pointer"
                 >
                   Ekle
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddFile(false)}
-                  className="px-2 py-1.5 text-gray-400 hover:text-white text-xs"
+                  className="px-2 py-1.5 text-gray-400 hover:text-white text-xs cursor-pointer"
                 >
                   İptal
                 </button>

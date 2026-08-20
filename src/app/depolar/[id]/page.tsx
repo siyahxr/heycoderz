@@ -40,7 +40,7 @@ export default function RepoDetailPage() {
   const router = useRouter();
   const repoId = params?.id as string;
 
-  const { getRepoById, toggleStar, forkRepository, deleteRepository, downloadRepoZip, addRepoComment } = useRepo();
+  const { getRepoById, isLoaded, toggleStar, forkRepository, deleteRepository, downloadRepoZip, addRepoComment } = useRepo();
   const { user } = useAuth();
   const { t } = useLanguage();
 
@@ -52,6 +52,20 @@ export default function RepoDetailPage() {
   const [copiedShare, setCopiedShare] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [forking, setForking] = useState(false);
+
+  if (!isLoaded) {
+    return (
+      <div className="relative min-h-screen bg-[#030303] text-gray-100 flex flex-col font-sans">
+        <BackgroundEffects />
+        <Navbar />
+        <main className="relative z-10 flex-1 max-w-7xl mx-auto px-4 py-28 text-center space-y-4">
+          <div className="w-10 h-10 border-3 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-xs text-gray-400 font-mono">Depo yükleniyor...</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!repo) {
     return (

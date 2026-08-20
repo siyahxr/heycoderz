@@ -90,6 +90,7 @@ export interface CreateRepoInput {
 
 interface RepoContextType {
   repositories: Repository[];
+  isLoaded: boolean;
   getRepoById: (id: string) => Repository | undefined;
   createRepository: (input: CreateRepoInput, currentUser: UserProfile | null) => Repository;
   deleteRepository: (id: string) => void;
@@ -107,6 +108,7 @@ const RepoContext = createContext<RepoContextType | undefined>(undefined);
 
 export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [repositories, setRepositories] = useState<Repository[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     try {
@@ -128,14 +130,16 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return !isMockId && !isMockFork;
           });
           setRepositories(userOnlyRepos);
+          setIsLoaded(true);
           localStorage.setItem("heycoderz_repositories", JSON.stringify(userOnlyRepos));
           return;
         }
       }
     } catch {}
-    // Save defaults
+    setRepositories([]);
+    setIsLoaded(true);
     try {
-      localStorage.setItem("heycoderz_repositories", JSON.stringify(DEFAULT_REPOSITORIES));
+      localStorage.setItem("heycoderz_repositories", JSON.stringify([]));
     } catch {}
   }, []);
 
@@ -393,6 +397,7 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <RepoContext.Provider
       value={{
         repositories,
+        isLoaded,
         getRepoById,
         createRepository,
         deleteRepository,
