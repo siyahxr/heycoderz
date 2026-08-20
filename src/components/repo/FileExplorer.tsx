@@ -36,7 +36,7 @@ const BINARY_EXTENSIONS_REGEX = /\.(exe|dll|so|dylib|bin|dat|woff|woff2|ttf|eot|
 
 export const FileExplorer: React.FC<FileExplorerProps> = ({ repo, isOwner = false }) => {
   const { t } = useLanguage();
-  const { downloadSingleFile, updateRepoFile, deleteRepoFile, addFileToRepo } = useRepo();
+  const { downloadSingleFile, downloadRepoZip, updateRepoFile, deleteRepoFile, addFileToRepo } = useRepo();
 
   const [selectedFile, setSelectedFile] = useState<RepoFile>(
     repo.files[0] || {
@@ -331,6 +331,17 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({ repo, isOwner = fals
             >
               <Download className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{t("common.download")}</span>
+            </button>
+
+            {/* Download Whole Repo ZIP / RAR */}
+            <button
+              type="button"
+              onClick={() => downloadRepoZip(repo, "zip")}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600/35 border border-purple-500/35 text-xs font-medium text-purple-300 hover:text-white transition-all cursor-pointer"
+              title="Tüm depoyu fotoğraflarla birlikte ZIP/RAR arşivi olarak indir"
+            >
+              <FileArchive className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">ZIP/RAR İndir</span>
             </button>
           </div>
         </div>

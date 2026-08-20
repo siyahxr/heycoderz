@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import JSZip from "jszip";
 import { UserProfile } from "./AuthContext";
 
 export interface RepoFile {
@@ -101,7 +102,7 @@ interface RepoContextType {
   deleteRepoFile: (repoId: string, filePath: string) => void;
   addRepoComment: (repoId: string, text: string, currentUser: UserProfile | null) => void;
   downloadSingleFile: (file: RepoFile) => void;
-  downloadRepoZip: (repo: Repository) => void;
+  downloadRepoZip: (repo: Repository, extension?: "zip" | "rar") => Promise<void> | void;
 }
 
 const RepoContext = createContext<RepoContextType | undefined>(undefined);
@@ -373,33 +374,48 @@ export const RepoProvider: React.FC<{ children: React.ReactNode }> = ({ children
     URL.revokeObjectURL(url);
   };
 
-  const downloadRepoZip = (repo: Repository) => {
+  const downloadRepoZip = async (repo: Repository, extension: "zip" | "rar" = "zip") => {
     if (typeof window === "undefined") return;
-    // Generate bundle export file
-    const bundleData = {
-      repository: repo.name,
-      author: repo.author.username,
-      license: repo.license,
-      exportedAt: new Date().toISOString(),
-      files: repo.files.map((f) => ({
-        path: f.path,
-        name: f.name,
-        language: f.language,
-        content: f.content,
-      })),
-    };
 
-    const blob = new Blob([JSON.stringify(bundleData, null, 2)], {
-      type: "application/json;charset=utf-8",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${repo.name}-bundle.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const zip = new JSZip();
+
+      repo.files.forEach((file) => {
+        // If it's an image stored as Data URL (data:image/png;base64,...)
+        if (file.content.startsWith("data:")) {
+          const base64Index = file.content.indexOf(";base64,");
+          if (base64Index !== -1) {
+            const base64Data = file.content.substring(base64Index + 8);
+            zip.file(file.path, base64Data, { base64: true });
+          } else {
+            zip.file(file.path, file.content);
+          }
+        } else if (file.content === "[İkili Dosya / Binary File]") {
+          // Placeholder binary
+          zip.file(file.path, `// Binary file: ${file.name}`);
+        } else {
+          // Regular text / code file
+          zip.file(file.path, file.content);
+        }
+      });
+
+      const blob = await zip.generateAsync({
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: { level: 9 },
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${repo.name}.${extension}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert("Arşiv oluşturulurken bir hata oluştu: " + (err?.message || "Bilinmeyen hata"));
+    }
   };
 
   return (
