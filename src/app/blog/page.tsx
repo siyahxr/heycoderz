@@ -15,9 +15,11 @@ import {
   Sparkles
 } from "lucide-react";
 import { useBlog, BlogArticle } from "@/context/BlogContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function BlogPage() {
   const { articles } = useBlog();
+  const { t } = useLanguage();
   const [selectedTag, setSelectedTag] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -42,16 +44,16 @@ export default function BlogPage() {
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/40 border border-purple-500/30 text-xs font-medium text-purple-300 shadow-[0_0_15px_rgba(139,92,246,0.2)]">
             <BookOpen className="w-3.5 h-3.5" />
-            <span>heycoderz Bilgi Bankası & Blog</span>
+            <span>{t("blog.badge")}</span>
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-            Geliştirici{" "}
+            {t("blog.titlePrefix")}{" "}
             <span className="bg-gradient-to-r from-purple-400 via-purple-500 to-indigo-400 bg-clip-text text-transparent">
-              Yazıları & Belgeler
+              {t("blog.titleHighlight")}
             </span>
           </h1>
           <p className="text-sm sm:text-base text-gray-400">
-            Yazılım dünyasından en son haberler, derin teknik yazılar, dökümanlar ve indirilebilir rehberler.
+            {t("blog.subtitle")}
           </p>
         </div>
 

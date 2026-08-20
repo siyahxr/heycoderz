@@ -32,6 +32,7 @@ import { MarkdownLiveTool } from "@/components/tools/MarkdownLiveTool";
 import { ImageBase64Tool } from "@/components/tools/ImageBase64Tool";
 import { BoxShadowTool } from "@/components/tools/BoxShadowTool";
 import { ColorContrastTool } from "@/components/tools/ColorContrastTool";
+import { useLanguage } from "@/context/LanguageContext";
 
 type ToolKey = 
   | "json-to-ts" 
@@ -48,6 +49,7 @@ type ToolKey =
   | "color-contrast";
 
 export default function ToolsPage() {
+  const { t } = useLanguage();
   const [activeTool, setActiveTool] = useState<ToolKey>("json-to-ts");
   const [searchFilter, setSearchFilter] = useState("");
 
@@ -154,16 +156,16 @@ export default function ToolsPage() {
         <div className="text-center max-w-3xl mx-auto mb-10 space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/40 border border-purple-500/30 text-xs font-medium text-purple-300 shadow-[0_0_15px_rgba(139,92,246,0.2)]">
             <Wrench className="w-3.5 h-3.5" />
-            <span>heycoderz Geliştirici Araç Kiti v2.6</span>
+            <span>{t("tools.badge")}</span>
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-            Geliştirici{" "}
+            {t("tools.titlePrefix")}{" "}
             <span className="bg-gradient-to-r from-purple-400 via-purple-500 to-indigo-400 bg-clip-text text-transparent">
-              Üretkenlik Araçları
+              {t("tools.titleHighlight")}
             </span>
           </h1>
           <p className="text-xs sm:text-sm text-gray-400">
-            Tarayıcınızda %100 yerel ve güvenli çalışan, veri sızdırmayan profesyonel araçlar.
+            {t("tools.subtitle")}
           </p>
         </div>
 
@@ -172,13 +174,13 @@ export default function ToolsPage() {
           <div className="flex items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-2 text-xs font-mono text-gray-400">
               <Sparkles className="w-4 h-4 text-purple-400" />
-              <span>Araç Seçin ({toolsList.length} Aktif Araç)</span>
+              <span>{toolsList.length} Araç</span>
             </div>
             <div className="relative w-48 sm:w-64">
               <Search className="w-3.5 h-3.5 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Araçlarda ara..."
+                placeholder={t("tools.searchPlaceholder")}
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 className="w-full bg-white/[0.03] border border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-gray-500 outline-none focus:border-purple-500 transition-colors"

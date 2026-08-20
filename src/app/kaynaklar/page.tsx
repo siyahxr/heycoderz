@@ -310,7 +310,10 @@ const UI_LIBRARIES = [
   },
 ];
 
+import { useLanguage } from "@/context/LanguageContext";
+
 export default function ResourcesPage() {
+  const { t } = useLanguage();
   const [selectedCategory, setSelectedCategory] = useState<"all" | "roadmap" | "cheatsheet" | "ui">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedCodeId, setCopiedCodeId] = useState<string | null>(null);
@@ -420,16 +423,16 @@ export default function ResourcesPage() {
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/40 border border-purple-500/30 text-xs font-medium text-purple-300 shadow-[0_0_15px_rgba(139,92,246,0.2)]">
             <GraduationCap className="w-3.5 h-3.5" />
-            <span>heycoderz Bilgi Merkezi</span>
+            <span>{t("resources.badge")}</span>
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-            Geliştirici{" "}
+            {t("resources.titlePrefix")}{" "}
             <span className="bg-gradient-to-r from-purple-400 via-purple-500 to-indigo-400 bg-clip-text text-transparent">
-              Kaynak Kütüphanesi
+              {t("resources.titleHighlight")}
             </span>
           </h1>
           <p className="text-sm sm:text-base text-gray-400">
-            Kariyerinizi ve projelerinizi ileri taşıyacak rehberler, yol haritaları, kod hile sayfaları ve araçlar.
+            {t("resources.subtitle")}
           </p>
         </div>
 

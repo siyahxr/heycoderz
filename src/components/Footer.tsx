@@ -55,6 +55,11 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
+                <Link href="/depolar" className="hover:text-purple-300 transition-colors">
+                  {t("nav.repositories")}
+                </Link>
+              </li>
+              <li>
                 <Link href="/araclar" className="hover:text-purple-300 transition-colors">
                   {t("nav.tools")}
                 </Link>

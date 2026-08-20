@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { CommunityProvider } from "@/context/CommunityContext";
 import { BlogProvider } from "@/context/BlogContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { RepoProvider } from "@/context/RepoContext";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
@@ -76,11 +77,13 @@ export default function RootLayout({
         />
         <LanguageProvider>
           <AuthProvider>
-            <CommunityProvider>
-              <BlogProvider>
-                {children}
-              </BlogProvider>
-            </CommunityProvider>
+            <RepoProvider>
+              <CommunityProvider>
+                <BlogProvider>
+                  {children}
+                </BlogProvider>
+              </CommunityProvider>
+            </RepoProvider>
           </AuthProvider>
         </LanguageProvider>
       </body>

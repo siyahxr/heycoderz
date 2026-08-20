@@ -20,10 +20,12 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCommunity, formatTimeAgo } from "@/context/CommunityContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function CommunityPage() {
   const { user } = useAuth();
   const { posts, createPost, addComment, toggleLike, deletePost } = useCommunity();
+  const { t } = useLanguage();
 
   const [selectedTag, setSelectedTag] = useState("all");
   const [newTitle, setNewTitle] = useState("");
@@ -77,16 +79,16 @@ export default function CommunityPage() {
         <div className="text-center max-w-3xl mx-auto mb-10 space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/40 border border-purple-500/30 text-xs font-medium text-purple-300 shadow-[0_0_15px_rgba(139,92,246,0.2)]">
             <Users className="w-3.5 h-3.5" />
-            <span>heycoderz Topluluk Alanı</span>
+            <span>{t("community.badge")}</span>
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-            Geliştirici{" "}
+            {t("community.titlePrefix")}{" "}
             <span className="bg-gradient-to-r from-purple-400 via-purple-500 to-indigo-400 bg-clip-text text-transparent">
-              Tartışma & Paylaşım
+              {t("community.titleHighlight")}
             </span>
           </h1>
           <p className="text-xs sm:text-sm text-gray-400">
-            Sorularınızı sorun, geliştirdiğiniz araçları tanıtın veya diğer yazılımcılarla fikir alışverişi yapın.
+            {t("community.subtitle")}
           </p>
         </div>
 

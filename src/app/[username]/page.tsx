@@ -22,6 +22,10 @@ import {
 } from "lucide-react";
 import { UserProfile, useAuth, BASE_MAIN_USER, BASE_OYKU } from "@/context/AuthContext";
 import { useCommunity, formatTimeAgo } from "@/context/CommunityContext";
+import { useRepo } from "@/context/RepoContext";
+import { useLanguage } from "@/context/LanguageContext";
+import { RepoCard } from "@/components/repo/RepoCard";
+import { FolderGit2 } from "lucide-react";
 
 export default function PublicProfilePage() {
   const params = useParams();
@@ -30,6 +34,8 @@ export default function PublicProfilePage() {
   
   const { user: currentUser } = useAuth();
   const { posts } = useCommunity();
+  const { repositories } = useRepo();
+  const { t } = useLanguage();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -145,6 +151,16 @@ export default function PublicProfilePage() {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  // User's repositories
+  const userRepos = repositories.filter(
+    (r) =>
+      r.author.username.toLowerCase() === username ||
+      (profile && r.author.id === profile.id) ||
+      (username === "siyah" && (r.author.username === "siyah" || r.author.id === "admin-siyah")) ||
+      (username === "$" && (r.author.username === "siyah" || r.author.id === "admin-siyah")) ||
+      (username === "oyku" && (r.author.username === "oyku" || r.author.id === "user-oyku"))
+  );
 
   // User's community posts
   const userPosts = posts.filter(
@@ -296,6 +312,35 @@ export default function PublicProfilePage() {
                 </div>
               </div>
             )}
+
+            {/* Repositories Section */}
+            <div className="p-6 rounded-2xl bg-[#09090F]/80 border border-white/10 backdrop-blur-xl space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center gap-2 font-mono">
+                  <FolderGit2 className="w-3.5 h-3.5" />
+                  <span>Kod Depoları & Projeler ({userRepos.length})</span>
+                </h3>
+                <Link
+                  href="/depolar"
+                  className="text-xs text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1 font-medium"
+                >
+                  <span>Tüm Depoları Gör</span>
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+              </div>
+
+              {userRepos.length === 0 ? (
+                <p className="text-xs text-gray-500 py-4 text-center">
+                  Henüz paylaşılan bir kod deposu bulunmuyor.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {userRepos.map((repo) => (
+                    <RepoCard key={repo.id} repo={repo} />
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Community Activity Section */}
             <div className="p-6 rounded-2xl bg-[#09090F]/80 border border-white/10 backdrop-blur-xl space-y-4">

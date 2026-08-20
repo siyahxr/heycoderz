@@ -5,8 +5,11 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { BackgroundEffects } from "@/components/BackgroundEffects";
 import { Sparkles, Users, Rocket, ShieldCheck } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function AboutPage() {
+  const { t } = useLanguage();
+
   return (
     <div className="relative min-h-screen bg-[#030303] text-gray-100 flex flex-col font-sans selection:bg-purple-500/30 selection:text-white">
       <BackgroundEffects />
@@ -17,17 +20,16 @@ export default function AboutPage() {
         <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/40 border border-purple-500/30 text-xs font-medium text-purple-300 shadow-[0_0_15px_rgba(139,92,246,0.2)]">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Misyonumuz & Hikayemiz</span>
+            <span>{t("about.badge")}</span>
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
-            Geliştiricileri{" "}
+            {t("about.titlePrefix")}{" "}
             <span className="bg-gradient-to-r from-purple-400 via-purple-500 to-indigo-400 bg-clip-text text-transparent">
-              Güçlendirmek İçin
-            </span>{" "}
-            Buradayız
+              {t("about.titleHighlight")}
+            </span>
           </h1>
           <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
-            heycoderz, yazılımcıların daha hızlı öğrenmesini, kaliteli geliştirici araçlarına ücretsiz erişmesini ve birlikte üretmesini hedefleyen modern bir ekosistemdir.
+            {t("about.subtitle")}
           </p>
         </div>
 

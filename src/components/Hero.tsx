@@ -49,20 +49,20 @@ export const Hero: React.FC = () => {
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto pt-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto pt-2">
               <Link
-                href="/araclar"
-                className="inline-flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl font-medium text-white bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-[0_0_25px_rgba(139,92,246,0.4)] hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] transition-all duration-200 group text-center cursor-pointer active:scale-98"
+                href="/depolar"
+                className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-medium text-white bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-[0_0_25px_rgba(139,92,246,0.4)] hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] transition-all duration-200 group text-center cursor-pointer active:scale-98"
               >
-                <span>{t("hero.exploreBtn")}</span>
+                <span>{t("nav.repositories")} (GitHub Hub)</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
 
               <Link
-                href="/kaynaklar"
-                className="inline-flex items-center justify-center gap-1.5 px-7 py-3.5 rounded-xl font-medium text-gray-200 hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border border-white/15 hover:border-purple-500/40 backdrop-blur-sm transition-all duration-200 group text-center cursor-pointer active:scale-98"
+                href="/araclar"
+                className="inline-flex items-center justify-center gap-1.5 px-6 py-3.5 rounded-xl font-medium text-gray-200 hover:text-white bg-white/[0.03] hover:bg-white/[0.07] border border-white/15 hover:border-purple-500/40 backdrop-blur-sm transition-all duration-200 group text-center cursor-pointer active:scale-98"
               >
-                <span>{t("hero.resourcesBtn")}</span>
+                <span>{t("hero.exploreBtn")}</span>
                 <ChevronRight className="w-4 h-4 text-gray-400 group-hover:text-purple-400 group-hover:translate-x-0.5 transition-all" />
               </Link>
             </div>

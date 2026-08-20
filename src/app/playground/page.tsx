@@ -19,6 +19,7 @@ import {
   Laptop
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 
 const PRESETS = [
   {
@@ -173,6 +174,7 @@ animate();`,
 
 export default function PlaygroundPage() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [htmlCode, setHtmlCode] = useState(PRESETS[0].html);
   const [cssCode, setCssCode] = useState(PRESETS[0].css);
   const [jsCode, setJsCode] = useState(PRESETS[0].js);
@@ -256,10 +258,13 @@ export default function PlaygroundPage() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-950/40 border border-purple-500/30 text-[11px] font-mono text-purple-300 mb-2">
               <Laptop className="w-3.5 h-3.5" />
-              <span>Canlı Web IDE & Sandbox</span>
+              <span>{t("playground.badge")}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Web <span className="bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">Playground</span>
+              {t("playground.titlePrefix")}{" "}
+              <span className="bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">
+                {t("playground.titleHighlight")}
+              </span>
             </h1>
           </div>
 
@@ -271,7 +276,7 @@ export default function PlaygroundPage() {
               className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-[0_0_15px_rgba(139,92,246,0.35)] flex items-center gap-1.5 cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>Çalıştır (Auto-Sync)</span>
+              <span>{t("playground.runBtn")}</span>
             </button>
 
             <button

@@ -17,6 +17,7 @@ export const Navbar: React.FC = () => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const mainNavItems = [
+    { id: "depolar", label: t("nav.repositories"), href: "/depolar" },
     { id: "araclar", label: t("nav.tools"), href: "/araclar" },
     { id: "playground", label: t("nav.playground"), href: "/playground" },
     { id: "kaynaklar", label: t("nav.resources"), href: "/kaynaklar" },

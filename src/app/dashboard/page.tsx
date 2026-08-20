@@ -42,11 +42,19 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useBlog, BlogArticle } from "@/context/BlogContext";
+import { useRepo } from "@/context/RepoContext";
+import { useLanguage } from "@/context/LanguageContext";
+import { RepoCard } from "@/components/repo/RepoCard";
+import { CreateRepoModal } from "@/components/repo/CreateRepoModal";
+import { FolderGit2 } from "lucide-react";
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, updateProfile, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<"overview" | "snippets" | "profile" | "admin">("overview");
+  const { repositories } = useRepo();
+  const { t } = useLanguage();
+  const [activeTab, setActiveTab] = useState<"overview" | "repos" | "snippets" | "profile" | "admin">("overview");
+  const [isCreateRepoOpen, setIsCreateRepoOpen] = useState(false);
 
   // Profile Edit Form State
   const [editName, setEditName] = useState("");
@@ -344,6 +352,17 @@ export default function DashboardPage() {
             <Settings className="w-3.5 h-3.5" />
             <span>Tüm Ayarlar & Şifre Değiştir</span>
           </Link>
+          <button
+            type="button"
+            onClick={() => setActiveTab("repos")}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all cursor-pointer flex items-center gap-1.5 ${activeTab === "repos"
+                ? "bg-purple-600 text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]"
+                : "text-gray-400 hover:text-white"
+              }`}
+          >
+            <FolderGit2 className="w-3.5 h-3.5" />
+            <span>Depolarım & Kod Paylaşımı ({repositories.filter((r) => user && (r.author.id === user.id || r.author.username === user.username || (user.username === "siyah" && r.author.username === "siyah"))).length})</span>
+          </button>
           <button
             type="button"
             onClick={() => setActiveTab("snippets")}
@@ -646,6 +665,74 @@ export default function DashboardPage() {
                 </div>
               </form>
             </div>
+          </div>
+        )}
+
+        {/* ================= 2.5 REPOSITORIES TAB ================= */}
+        {activeTab === "repos" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-2xl bg-[#08080E]/90 border border-purple-500/30 shadow-xl">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <FolderGit2 className="w-5 h-5 text-purple-400" />
+                  <span>Paylaştığım Kod Depoları & Projeler</span>
+                </h3>
+                <p className="text-xs text-gray-400 mt-1">
+                  Çoklu dosya projelerinizi GitHub tarzı depolarda yayınlayın, güncelleyin veya yeni proje paylaşın.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateRepoOpen(true)}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-[0_0_15px_rgba(139,92,246,0.35)] flex items-center justify-center gap-2 cursor-pointer transition-all shrink-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Yeni Depo Paylaş</span>
+                </button>
+              </div>
+            </div>
+
+            {/* My Repositories Grid */}
+            {(() => {
+              const myRepos = repositories.filter(
+                (r) =>
+                  (user && r.author.id === user.id) ||
+                  (user && r.author.username.toLowerCase() === user.username.toLowerCase()) ||
+                  (user?.username === "siyah" && (r.author.username === "siyah" || r.author.id === "admin-siyah")) ||
+                  (user?.username === "$" && (r.author.username === "siyah" || r.author.id === "admin-siyah")) ||
+                  (user?.username === "oyku" && (r.author.username === "oyku" || r.author.id === "user-oyku"))
+              );
+
+              if (myRepos.length === 0) {
+                return (
+                  <div className="p-12 rounded-3xl bg-[#08080E]/90 border border-white/[0.08] text-center space-y-3">
+                    <FolderGit2 className="w-12 h-12 text-gray-600 mx-auto" />
+                    <h4 className="text-base font-bold text-white">Henüz bir kod deposu paylaşmadınız</h4>
+                    <p className="text-xs text-gray-400 max-w-sm mx-auto">
+                      Projelerinizi ve açık kaynak kod dosyalarınızı Hey! Coder'z ekosisteminde hemen yayınlayın.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateRepoOpen(true)}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-medium transition-all"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>İlk Depoyu Oluştur</span>
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {myRepos.map((repo) => (
+                    <RepoCard key={repo.id} repo={repo} />
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
 
@@ -1201,6 +1288,11 @@ export default function DashboardPage() {
         )}
 
       </main>
+
+      <CreateRepoModal
+        isOpen={isCreateRepoOpen}
+        onClose={() => setIsCreateRepoOpen(false)}
+      />
 
       <Footer />
     </div>
