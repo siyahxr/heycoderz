@@ -49,7 +49,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "Playground",
     "nav.resources": "Kaynaklar",
     "nav.community": "Topluluk",
-    "nav.repositories": "Depolar (Hub)",
+    "nav.repositories": "Depolar",
     "nav.explore": "Keşfet",
     "nav.blog": "Blog",
     "nav.about": "Hakkımızda",
@@ -261,7 +261,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "Kullanım Şartları",
     "footer.cookies": "Çerez Politikası",
     "footer.copyright": "Tüm hakları saklıdır.",
-    "footer.repositories": "Kod Depoları (Hub)",
+    "footer.repositories": "Depolar",
   },
 
   en: {
@@ -269,7 +269,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "Playground",
     "nav.resources": "Resources",
     "nav.community": "Community",
-    "nav.repositories": "Repositories (Hub)",
+    "nav.repositories": "Repositories",
     "nav.explore": "Explore",
     "nav.blog": "Blog",
     "nav.about": "About Us",
@@ -468,7 +468,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "Terms of Service",
     "footer.cookies": "Cookie Policy",
     "footer.copyright": "All rights reserved.",
-    "footer.repositories": "Code Repositories (Hub)",
+    "footer.repositories": "Code Repositories",
   },
 
   de: {
@@ -476,7 +476,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "Playground",
     "nav.resources": "Ressourcen",
     "nav.community": "Community",
-    "nav.repositories": "Repositories (Hub)",
+    "nav.repositories": "Repositories",
     "nav.explore": "Entdecken",
     "nav.blog": "Blog",
     "nav.about": "Über Uns",
@@ -675,7 +675,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "Nutzungsbedingungen",
     "footer.cookies": "Cookie-Richtlinie",
     "footer.copyright": "Alle Rechte vorbehalten.",
-    "footer.repositories": "Repositories (Hub)",
+    "footer.repositories": "Repositories",
   },
 
   es: {
@@ -683,7 +683,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "Playground",
     "nav.resources": "Recursos",
     "nav.community": "Comunidad",
-    "nav.repositories": "Repositorios (Hub)",
+    "nav.repositories": "Repositorios",
     "nav.explore": "Explorar",
     "nav.blog": "Blog",
     "nav.about": "Sobre Nosotros",
@@ -882,7 +882,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "Términos de Servicio",
     "footer.cookies": "Política de Cookies",
     "footer.copyright": "Todos los derechos reservados.",
-    "footer.repositories": "Repositorios (Hub)",
+    "footer.repositories": "Repositorios",
   },
 
   fr: {
@@ -890,7 +890,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "Playground",
     "nav.resources": "Ressources",
     "nav.community": "Communauté",
-    "nav.repositories": "Dépôts (Hub)",
+    "nav.repositories": "Dépôts",
     "nav.explore": "Explorer",
     "nav.blog": "Blog",
     "nav.about": "À Propos",
@@ -1089,7 +1089,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "Conditions d'Utilisation",
     "footer.cookies": "Politique de Cookies",
     "footer.copyright": "Tous droits réservés.",
-    "footer.repositories": "Dépôts de Code (Hub)",
+    "footer.repositories": "Dépôts de Code",
   },
 
   it: {
@@ -1097,7 +1097,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "Playground",
     "nav.resources": "Risorse",
     "nav.community": "Community",
-    "nav.repositories": "Repository (Hub)",
+    "nav.repositories": "Repository",
     "nav.explore": "Esplora",
     "nav.blog": "Blog",
     "nav.about": "Chi Siamo",
@@ -1296,7 +1296,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "Termini di Servizio",
     "footer.cookies": "Cookie Policy",
     "footer.copyright": "Tutti i diritti riservati.",
-    "footer.repositories": "Repository di Codice (Hub)",
+    "footer.repositories": "Repository di Codice",
   },
 
   ru: {
@@ -1304,7 +1304,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "Песочница",
     "nav.resources": "Ресурсы",
     "nav.community": "Сообщество",
-    "nav.repositories": "Репозитории (Hub)",
+    "nav.repositories": "Репозитории",
     "nav.explore": "Обзор",
     "nav.blog": "Блог",
     "nav.about": "О нас",
@@ -1503,7 +1503,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "Условия использования",
     "footer.cookies": "Политика cookie",
     "footer.copyright": "Все права защищены.",
-    "footer.repositories": "Репозитории кода (Hub)",
+    "footer.repositories": "Репозитории кода",
   },
 
   az: {
@@ -1511,7 +1511,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "Playground",
     "nav.resources": "Resurslar",
     "nav.community": "İcma",
-    "nav.repositories": "Depolar (Hub)",
+    "nav.repositories": "Depolar",
     "nav.explore": "Kəşf et",
     "nav.blog": "Bloq",
     "nav.about": "Haqqımızda",
@@ -1710,7 +1710,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "İstifadə Qaydaları",
     "footer.cookies": "Kuki Siyasəti",
     "footer.copyright": "Bütün hüquqlar qorunur.",
-    "footer.repositories": "Kod Depoları (Hub)",
+    "footer.repositories": "Kod Depoları",
   },
 
   ar: {
@@ -1718,7 +1718,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "بيئة الأكواد",
     "nav.resources": "المصادر",
     "nav.community": "المجتمع",
-    "nav.repositories": "المستودعات (Hub)",
+    "nav.repositories": "المستودعات",
     "nav.explore": "استكشف",
     "nav.blog": "المدونة",
     "nav.about": "من نحن",
@@ -1917,7 +1917,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "شروط الاستخدام",
     "footer.cookies": "سياسة ملفات تعريف الارتباط",
     "footer.copyright": "جميع الحقوق محفوظة.",
-    "footer.repositories": "مستودعات الكود (Hub)",
+    "footer.repositories": "مستودعات الكود",
   },
 
   "zh-CN": {
@@ -1925,7 +1925,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "代码操场",
     "nav.resources": "开发资源",
     "nav.community": "开发者社区",
-    "nav.repositories": "代码仓库 (Hub)",
+    "nav.repositories": "代码仓库",
     "nav.explore": "发现人才",
     "nav.blog": "技术博客",
     "nav.about": "关于我们",
@@ -2124,7 +2124,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "使用条款",
     "footer.cookies": "Cookie 政策",
     "footer.copyright": "版权所有。",
-    "footer.repositories": "代码仓库 (Hub)",
+    "footer.repositories": "代码仓库",
   },
 
   ja: {
@@ -2132,7 +2132,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "プレイグラウンド",
     "nav.resources": "リソース",
     "nav.community": "コミュニティ",
-    "nav.repositories": "リポジトリ (Hub)",
+    "nav.repositories": "リポジトリ",
     "nav.explore": "探索",
     "nav.blog": "ブログ",
     "nav.about": "概要",
@@ -2331,7 +2331,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "利用規約",
     "footer.cookies": "クッキーポリシー",
     "footer.copyright": "無断転載を禁じます。",
-    "footer.repositories": "コードリポジトリ (Hub)",
+    "footer.repositories": "コードリポジトリ",
   },
 
   ko: {
@@ -2339,7 +2339,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "플레이그라운드",
     "nav.resources": "리소스",
     "nav.community": "커뮤니티",
-    "nav.repositories": "저장소 (Hub)",
+    "nav.repositories": "저장소",
     "nav.explore": "탐색",
     "nav.blog": "블로그",
     "nav.about": "소개",
@@ -2538,7 +2538,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "이용약관",
     "footer.cookies": "쿠키 정책",
     "footer.copyright": "All rights reserved.",
-    "footer.repositories": "코드 저장소 (Hub)",
+    "footer.repositories": "코드 저장소",
   },
 
   pt: {
@@ -2546,7 +2546,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "Playground",
     "nav.resources": "Recursos",
     "nav.community": "Comunidade",
-    "nav.repositories": "Repositórios (Hub)",
+    "nav.repositories": "Repositórios",
     "nav.explore": "Explorar",
     "nav.blog": "Blog",
     "nav.about": "Sobre",
@@ -2745,7 +2745,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "Termos de Uso",
     "footer.cookies": "Política de Cookies",
     "footer.copyright": "Todos os direitos reservados.",
-    "footer.repositories": "Repositórios de Código (Hub)",
+    "footer.repositories": "Repositórios de Código",
   },
 
   nl: {
@@ -2753,7 +2753,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "nav.playground": "Playground",
     "nav.resources": "Bronnen",
     "nav.community": "Community",
-    "nav.repositories": "Repositories (Hub)",
+    "nav.repositories": "Repositories",
     "nav.explore": "Ontdekken",
     "nav.blog": "Blog",
     "nav.about": "Over Ons",
@@ -2952,7 +2952,7 @@ export const DICTIONARY: Record<LanguageCode, Record<string, string>> = {
     "footer.terms": "Algemene Voorwaarden",
     "footer.cookies": "Cookiebeleid",
     "footer.copyright": "Alle rechten voorbehouden.",
-    "footer.repositories": "Code Repositories (Hub)",
+    "footer.repositories": "Code Repositories",
   },
 };
 

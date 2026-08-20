@@ -54,7 +54,7 @@ export const Hero: React.FC = () => {
                 href="/depolar"
                 className="inline-flex items-center justify-center gap-2.5 px-6 py-3.5 rounded-xl font-medium text-white bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-[0_0_25px_rgba(139,92,246,0.4)] hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] transition-all duration-200 group text-center cursor-pointer active:scale-98"
               >
-                <span>{t("nav.repositories")} (GitHub Hub)</span>
+                <span>{t("nav.repositories")}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
 
